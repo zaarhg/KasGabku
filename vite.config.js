@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    base: './',
+    base: '/KasGabku/',
     server: {
         host: 'localhost',
         port: 5173
