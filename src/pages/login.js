@@ -1,14 +1,26 @@
 import { signIn } from '../services/auth.js';
 
-export function renderLoginPage({ onLoginSuccess }) {
-    const page = document.createElement('div');
-    page.className = 'login-page';
+const PUBLIC_BASE = import.meta.env.BASE_URL || '/';
 
-    page.innerHTML = `
+function publicAsset(path) {
+  const normalizedPath = String(path || '').replace(/^\/+/, '');
+
+  if (import.meta.env.DEV) {
+    return `/${normalizedPath}`;
+  }
+
+  return `${PUBLIC_BASE}${normalizedPath}`;
+}
+
+export function renderLoginPage({ onLoginSuccess }) {
+  const page = document.createElement('div');
+  page.className = 'login-page';
+
+  page.innerHTML = `
     <section class="login-brand">
       <div class="login-brand-inner">
         <div class="login-logo-card">
-          <img src="/logo-app.png" alt="Logo Kas Gabku" />
+          <img src="${publicAsset('logo-app.png')}" alt="Logo Kas Gabku" />
         </div>
 
         <h1>Kas Gabku</h1>
@@ -63,49 +75,49 @@ export function renderLoginPage({ onLoginSuccess }) {
     </section>
   `;
 
-    const form = page.querySelector('#login-form');
-    const emailInput = page.querySelector('#email');
-    const passwordInput = page.querySelector('#password');
-    const errorBox = page.querySelector('#login-error');
-    const button = page.querySelector('#login-button');
+  const form = page.querySelector('#login-form');
+  const emailInput = page.querySelector('#email');
+  const passwordInput = page.querySelector('#password');
+  const errorBox = page.querySelector('#login-error');
+  const button = page.querySelector('#login-button');
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
-        errorBox.classList.remove('is-visible');
-        errorBox.textContent = '';
+    errorBox.classList.remove('is-visible');
+    errorBox.textContent = '';
 
-        button.disabled = true;
-        button.textContent = 'Memproses...';
+    button.disabled = true;
+    button.textContent = 'Memproses...';
 
-        try {
-            await signIn(email, password);
-            await onLoginSuccess();
-        } catch (error) {
-            errorBox.textContent = translateAuthError(error.message);
-            errorBox.classList.add('is-visible');
-        } finally {
-            button.disabled = false;
-            button.textContent = 'Masuk';
-        }
-    });
+    try {
+      await signIn(email, password);
+      await onLoginSuccess();
+    } catch (error) {
+      errorBox.textContent = translateAuthError(error.message);
+      errorBox.classList.add('is-visible');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Masuk';
+    }
+  });
 
-    return page;
+  return page;
 }
 
 function translateAuthError(message) {
-    const lower = String(message || '').toLowerCase();
+  const lower = String(message || '').toLowerCase();
 
-    if (lower.includes('invalid login credentials')) {
-        return 'Email atau password salah.';
-    }
+  if (lower.includes('invalid login credentials')) {
+    return 'Email atau password salah.';
+  }
 
-    if (lower.includes('email not confirmed')) {
-        return 'Email belum dikonfirmasi.';
-    }
+  if (lower.includes('email not confirmed')) {
+    return 'Email belum dikonfirmasi.';
+  }
 
-    return message || 'Gagal masuk. Coba lagi.';
+  return message || 'Gagal masuk. Coba lagi.';
 }
