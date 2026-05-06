@@ -3811,3 +3811,17 @@ select {
         }
     }
 }
+
+/* =========================================================
+   SCROLL SAFETY PATCH
+========================================================= */
+
+@media (max-width: 980px) {
+    body:not(.modal-open) {
+        overflow-y: auto;
+    }
+
+    .main-area {
+        overflow-y: visible;
+    }
+}

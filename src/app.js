@@ -14,6 +14,8 @@ const appState = {
   profile: null
 };
 
+let hashChangeBound = false;
+
 const routes = [
   {
     key: 'dashboard',
@@ -74,6 +76,7 @@ function publicAsset(path) {
 export async function startApp() {
   const root = getRoot();
 
+  bindHashChange(root);
   renderBoot(root);
 
   try {
@@ -90,6 +93,12 @@ export async function startApp() {
     console.error(error);
     renderLogin(root, error.message);
   }
+}
+
+function bindHashChange(root) {
+  if (hashChangeBound) return;
+
+  hashChangeBound = true;
 
   window.addEventListener('hashchange', () => {
     if (appState.session && appState.profile) {
@@ -109,6 +118,8 @@ function getRoot() {
 }
 
 function renderBoot(root) {
+  document.body.classList.remove('modal-open');
+
   root.innerHTML = `
     <div class="app-boot">
       <img src="${publicAsset('logo-app.png')}" alt="Kas Gabku" class="app-boot-logo" />
@@ -118,6 +129,8 @@ function renderBoot(root) {
 }
 
 function renderLogin(root, initialError = '') {
+  document.body.classList.remove('modal-open');
+
   root.innerHTML = '';
 
   const loginPage = renderLoginPage({
@@ -141,6 +154,8 @@ function renderLogin(root, initialError = '') {
 }
 
 function renderShell(root) {
+  document.body.classList.remove('modal-open');
+
   const currentRoute = getCurrentRoute();
   const activeMenuKey = getActiveMenuKey(currentRoute);
   const accessibleRoutes = getAccessibleRoutes();
@@ -243,7 +258,7 @@ function renderPlaceholderPage(route) {
         ${escapeHtml(routeData?.label || 'Halaman')}
       </h1>
       <p class="page-description">
-        Halaman ini belum diisi. Kita akan buat setelah fondasi login dan dashboard berjalan normal.
+        Halaman ini belum diisi.
       </p>
       <button class="btn btn-primary" type="button" data-route="dashboard">
         Kembali ke Beranda
