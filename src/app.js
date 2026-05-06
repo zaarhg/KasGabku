@@ -59,10 +59,16 @@ const routes = [
   }
 ];
 
-const PUBLIC_BASE = import.meta.env.BASE_URL;
+const PUBLIC_BASE = import.meta.env.BASE_URL || '/';
 
 function publicAsset(path) {
-  return `${PUBLIC_BASE}${String(path).replace(/^\/+/, '')}`;
+  const normalizedPath = String(path || '').replace(/^\/+/, '');
+
+  if (import.meta.env.DEV) {
+    return `/${normalizedPath}`;
+  }
+
+  return `${PUBLIC_BASE}${normalizedPath}`;
 }
 
 export async function startApp() {
@@ -142,9 +148,9 @@ function renderShell(root) {
   root.innerHTML = `
     <div class="app-shell">
       ${renderSidebar(accessibleRoutes, activeMenuKey)}
+
       <main class="main-area">
         ${renderMobileTopbar()}
-        ${renderTopbar(currentRoute, activeMenuKey)}
         <section class="content" id="page-content"></section>
       </main>
     </div>
@@ -256,7 +262,7 @@ function renderSidebar(accessibleRoutes, activeMenuKey) {
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="sidebar-brand-logo">
-          <img src="/logo-app.png" alt="Kas Gabku" />
+          <img src="${publicAsset('logo-app.png')}" alt="Kas Gabku" />
         </div>
         <div>
           <div class="sidebar-brand-title">Kas Gabku</div>
@@ -284,7 +290,7 @@ function renderSidebar(accessibleRoutes, activeMenuKey) {
           <div class="user-avatar">${escapeHtml(initial)}</div>
           <div>
             <div class="user-mini-name">${escapeHtml(profile.full_name || 'Pengguna')}</div>
-            <div class="user-mini-role">${escapeHtml(profile.role || 'viewer')}</div>
+            <div class="user-mini-role">${escapeHtml(formatRole(profile.role || 'viewer'))}</div>
           </div>
         </div>
 
@@ -296,29 +302,11 @@ function renderSidebar(accessibleRoutes, activeMenuKey) {
   `;
 }
 
-function renderTopbar(currentRoute, activeMenuKey) {
-  const route = routes.find((item) => item.key === activeMenuKey);
-  const isDetailTransaksi = currentRoute.startsWith('detail-transaksi/');
-
-  return `
-    <header class="topbar">
-      <div>
-        <div class="topbar-title">
-          ${escapeHtml(isDetailTransaksi ? 'Detail Transaksi' : route?.label || 'Kas Gabku')}
-        </div>
-        <div class="topbar-subtitle">Gabungan Bridge Kulon Progo</div>
-      </div>
-
-      <span class="badge badge-blue">${escapeHtml(appState.profile?.role || 'viewer')}</span>
-    </header>
-  `;
-}
-
 function renderMobileTopbar() {
   return `
     <header class="mobile-topbar">
       <div class="mobile-brand">
-        <img src="/logo-app.png" alt="Kas Gabku" />
+        <img src="${publicAsset('logo-app.png')}" alt="Kas Gabku" />
         <span>Kas Gabku</span>
       </div>
 
@@ -408,6 +396,14 @@ async function handleLogout(root) {
     window.location.hash = '';
     renderLogin(root);
   }
+}
+
+function formatRole(role) {
+  if (role === 'admin') return 'Admin';
+  if (role === 'bendahara') return 'Bendahara';
+  if (role === 'viewer') return 'Viewer';
+
+  return role || '-';
 }
 
 function getInitial(value) {
