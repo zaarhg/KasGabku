@@ -59,6 +59,12 @@ const routes = [
   }
 ];
 
+const PUBLIC_BASE = import.meta.env.BASE_URL;
+
+function publicAsset(path) {
+  return `${PUBLIC_BASE}${String(path).replace(/^\/+/, '')}`;
+}
+
 export async function startApp() {
   const root = getRoot();
 
@@ -99,7 +105,7 @@ function getRoot() {
 function renderBoot(root) {
   root.innerHTML = `
     <div class="app-boot">
-      <img src="/logo-app.png" alt="Kas Gabku" class="app-boot-logo" />
+      <img src="${publicAsset('logo-app.png')}" alt="Kas Gabku" class="app-boot-logo" />
       <p>Memuat Kas Gabku...</p>
     </div>
   `;
