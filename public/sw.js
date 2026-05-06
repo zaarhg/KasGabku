@@ -1,17 +1,17 @@
-const CACHE_VERSION = 'kas-gabku-v1';
+const CACHE_VERSION = 'kas-gabku-v3';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 const STATIC_ASSETS = [
     './',
+    './manifest.webmanifest',
     './logo-app.png',
     './icon-192.png',
     './icon-512.png',
     './icon-maskable-192.png',
     './icon-maskable-512.png',
     './apple-touch-icon.png',
-    './favicon-50.png',
-    './manifest.webmanifest'
+    './favicon-50.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -29,6 +29,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames
+                    .filter((cacheName) => cacheName.startsWith('kas-gabku-'))
                     .filter((cacheName) => {
                         return ![APP_SHELL_CACHE, RUNTIME_CACHE].includes(cacheName);
                     })
@@ -52,11 +53,20 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (request.mode === 'navigate') {
-        event.respondWith(networkFirstForNavigation(request));
+        event.respondWith(networkFirstNavigation(request));
         return;
     }
 
-    if (
+    if (isStaticAsset(url)) {
+        event.respondWith(staleWhileRevalidate(request));
+        return;
+    }
+
+    event.respondWith(networkFirst(request));
+});
+
+function isStaticAsset(url) {
+    return (
         url.pathname.includes('/assets/') ||
         url.pathname.endsWith('.png') ||
         url.pathname.endsWith('.jpg') ||
@@ -66,15 +76,10 @@ self.addEventListener('fetch', (event) => {
         url.pathname.endsWith('.css') ||
         url.pathname.endsWith('.js') ||
         url.pathname.endsWith('.webmanifest')
-    ) {
-        event.respondWith(cacheFirst(request));
-        return;
-    }
+    );
+}
 
-    event.respondWith(networkFirst(request));
-});
-
-async function networkFirstForNavigation(request) {
+async function networkFirstNavigation(request) {
     try {
         const freshResponse = await fetch(request);
 
@@ -102,21 +107,26 @@ async function networkFirst(request) {
 
         return freshResponse;
     } catch (error) {
-        return caches.match(request);
+        const cachedResponse = await caches.match(request);
+
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        throw error;
     }
 }
 
-async function cacheFirst(request) {
-    const cachedResponse = await caches.match(request);
-
-    if (cachedResponse) {
-        return cachedResponse;
-    }
-
-    const freshResponse = await fetch(request);
-
+async function staleWhileRevalidate(request) {
     const cache = await caches.open(RUNTIME_CACHE);
-    cache.put(request, freshResponse.clone());
+    const cachedResponse = await cache.match(request);
 
-    return freshResponse;
+    const fetchPromise = fetch(request)
+        .then((freshResponse) => {
+            cache.put(request, freshResponse.clone());
+            return freshResponse;
+        })
+        .catch(() => cachedResponse);
+
+    return cachedResponse || fetchPromise;
 }

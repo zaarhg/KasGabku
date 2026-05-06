@@ -9,15 +9,15 @@ function setupServiceWorker() {
 
     window.addEventListener('load', async () => {
         if (import.meta.env.DEV) {
-            await unregisterServiceWorkersInDevelopment();
+            await cleanDevelopmentServiceWorker();
             return;
         }
 
-        await registerServiceWorker();
+        await registerProductionServiceWorker();
     });
 }
 
-async function registerServiceWorker() {
+async function registerProductionServiceWorker() {
     try {
         const swUrl = `${import.meta.env.BASE_URL}sw.js`;
 
@@ -31,7 +31,7 @@ async function registerServiceWorker() {
     }
 }
 
-async function unregisterServiceWorkersInDevelopment() {
+async function cleanDevelopmentServiceWorker() {
     try {
         const registrations = await navigator.serviceWorker.getRegistrations();
 
@@ -47,10 +47,6 @@ async function unregisterServiceWorkersInDevelopment() {
                     .filter((cacheName) => cacheName.startsWith('kas-gabku'))
                     .map((cacheName) => caches.delete(cacheName))
             );
-        }
-
-        if (registrations.length) {
-            console.info('Service worker dinonaktifkan di mode development. Refresh halaman sekali lagi.');
         }
     } catch (error) {
         console.warn('Gagal membersihkan service worker development:', error);
