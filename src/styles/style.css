@@ -3825,3 +3825,108 @@ select {
         overflow-y: visible;
     }
 }
+
+/* =========================================================
+   TOUCH / SCROLL RECOVERY PATCH
+   Membuat scroll mobile kembali normal
+========================================================= */
+
+html,
+body {
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+}
+
+body:not(.modal-open) {
+    overflow-y: auto !important;
+}
+
+.app-shell,
+.main-area,
+.content,
+.page-stack {
+    touch-action: pan-y;
+}
+
+@media (max-width: 980px) {
+
+    html,
+    body,
+    #app {
+        height: auto !important;
+        min-height: 100%;
+        overflow-x: hidden;
+    }
+
+    body:not(.modal-open) {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    .app-shell {
+        height: auto !important;
+        min-height: 100svh;
+        overflow: visible !important;
+    }
+
+    .main-area {
+        height: auto !important;
+        min-height: 100svh;
+        overflow: visible !important;
+    }
+
+    .content {
+        overflow: visible !important;
+        touch-action: pan-y;
+    }
+
+    .page-stack {
+        overflow: visible !important;
+        touch-action: pan-y;
+    }
+
+    .table-responsive,
+    .table-wrap {
+        touch-action: pan-x pan-y;
+    }
+
+    .mobile-nav,
+    .mobile-nav a,
+    button,
+    a,
+    .btn {
+        touch-action: manipulation;
+    }
+}
+
+/* Jangan terlalu agresif memblok seleksi teks.
+   Blok hanya elemen tombol/menu, bukan seluruh card/konten.
+*/
+
+body,
+.app-shell,
+.main-area,
+.content,
+.page-stack,
+.card,
+.toolbar-card,
+.table-card,
+.transaction-form-card,
+.detail-card,
+.master-card,
+.admin-user-card,
+.backup-card {
+    -webkit-user-select: auto;
+    user-select: auto;
+}
+
+button,
+.btn,
+.nav-link,
+.mobile-nav a,
+.badge,
+.sidebar,
+.mobile-topbar {
+    -webkit-user-select: none;
+    user-select: none;
+}
