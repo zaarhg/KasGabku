@@ -125,10 +125,13 @@ function renderPwaGate(root) {
           <div class="pwa-step">
             <span class="step-number">1</span>
             <div class="step-body">
-              <span>${isIOS ? 'Tekan ikon <strong>"Share"</strong> (kotak dengan panah atas) dan pilih <strong>"Add to Home Screen"</strong>.' : 'Tekan tombol <strong>"Instal Aplikasi"</strong> di bawah ini.'}</span>
+              <span id="pwa-step-1-text">${isIOS ? 'Tekan ikon <strong>"Share"</strong> (kotak dengan panah atas) dan pilih <strong>"Add to Home Screen"</strong>.' : 'Tekan tombol <strong>"Instal Aplikasi"</strong> di bawah ini.'}</span>
               <button class="btn btn-primary btn-block" id="pwa-gate-install-btn" style="display: none; margin-top: 12px;">
                 Instal Aplikasi
               </button>
+              <a href="${publicAsset('')}" class="btn btn-success btn-block" id="pwa-gate-open-btn" style="display: none; margin-top: 12px; text-decoration: none;">
+                Buka Aplikasi
+              </a>
             </div>
           </div>
           <div class="pwa-step">
@@ -147,11 +150,25 @@ function renderPwaGate(root) {
   `;
 
   const installBtn = root.querySelector('#pwa-gate-install-btn');
+  const openBtn = root.querySelector('#pwa-gate-open-btn');
+  const step1Text = root.querySelector('#pwa-step-1-text');
   
-  import('./main.js').then(({ promptPwaInstall, getDeferredPrompt }) => {
+  import('./main.js').then(async ({ promptPwaInstall, getDeferredPrompt }) => {
+    // Deteksi apakah sudah terinstall (Hanya di Chrome Android/Desktop tertentu)
+    let alreadyInstalled = false;
+    if ('getRelatedApps' in navigator) {
+        const relatedApps = await navigator.getRelatedApps();
+        alreadyInstalled = relatedApps.length > 0;
+    }
+
     const updateBtnVisibility = () => {
-        // Hanya tampilkan tombol jika prompt tersedia dan bukan di iOS 
-        // (karena iOS tidak mendukung programmatic prompt)
+        if (alreadyInstalled) {
+            step1Text.innerHTML = 'Aplikasi sudah terpasang. Tekan tombol di bawah untuk mencoba membuka aplikasi atau buka manual dari layar utama.';
+            openBtn.style.display = 'block';
+            installBtn.style.display = 'none';
+            return;
+        }
+
         if (getDeferredPrompt() && !isIOS) {
             installBtn.style.display = 'block';
         } else {
