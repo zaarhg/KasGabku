@@ -4294,27 +4294,6 @@ button,
         justify-content: flex-end;
     }
 }
-
-
-/* --- PWA NATIVE EXPERIENCE OPTIMIZATION --- */
-
-html,
-body {
-    /* Mencegah fitur pull-to-refresh browser yang sering mengganggu PWA */
-    overscroll-behavior-y: none;
-    /* Mencegah perubahan ukuran font otomatis saat rotasi layar */
-    -webkit-text-size-adjust: 100%;
-}
-
-body {
-    /* Mendukung area aman untuk HP dengan poni/notch */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
-* {
-    /* Menghilangkan kotak abu-abu saat menyentuh tombol di mobile */
-    -webkit-tap-highlight-color: transparent;
     outline: none;
 }
 
@@ -4561,5 +4540,26 @@ textarea,
     margin-top: 0;
     margin-bottom: 0;
     line-height: 1.5;
+}
+
+
+/* --- PWA NATIVE EXPERIENCE OPTIMIZATION --- */
+html,
+body {
+    /* Mencegah fitur pull-to-refresh browser yang sering mengganggu PWA */
+    overscroll-behavior-y: none;
+    /* Mencegah perubahan ukuran font otomatis saat rotasi layar */
+    -webkit-text-size-adjust: 100%;
+    /* Mendukung area aman untuk HP dengan poni/notch */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* Global Text Selection Disable */
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+* {
+    /* Menghilangkan kotak abu-abu saat menyentuh tombol di mobile */
+    -webkit-tap-highlight-color: transparent;
 }
 
