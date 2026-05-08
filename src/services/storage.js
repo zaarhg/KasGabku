@@ -59,6 +59,12 @@ export async function uploadTransactionNote({ transaction, file }) {
         throw insertError;
     }
 
+    // Trigger update to transaction updated_at
+    await supabase
+        .from('transactions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', transaction.id);
+
     await logActivity({
         action: 'upload_note',
         entityTable: 'transaction_attachments',
@@ -101,6 +107,48 @@ export async function getSignedUrlsForAttachments(attachments = []) {
     );
 
     return results;
+}
+
+export async function deleteTransactionNote(attachmentId) {
+    if (!attachmentId) {
+        throw new Error('ID foto nota tidak valid.');
+    }
+
+    const { data: attachment, error: getError } = await supabase
+        .from('transaction_attachments')
+        .select('id, file_path, transaction_id')
+        .eq('id', attachmentId)
+        .single();
+
+    if (getError) throw getError;
+
+    const { error: storageError } = await supabase.storage
+        .from(NOTES_BUCKET)
+        .remove([attachment.file_path]);
+
+    if (storageError) {
+        console.warn('Storage delete error:', storageError);
+    }
+
+    const { error: deleteError } = await supabase
+        .from('transaction_attachments')
+        .delete()
+        .eq('id', attachmentId);
+
+    if (deleteError) throw deleteError;
+
+    // Trigger update to transaction updated_at
+    await supabase
+        .from('transactions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', attachment.transaction_id);
+
+    await logActivity({
+        action: 'delete_note',
+        entityTable: 'transaction_attachments',
+        entityId: attachmentId,
+        description: `Foto nota dihapus (ID: ${attachmentId})`
+    });
 }
 
 function buildNotePath(transaction, fileName) {

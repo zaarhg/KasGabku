@@ -153,6 +153,33 @@ export async function setCategoryActive(categoryId, isActive) {
     return data;
 }
 
+export async function deleteCategory(categoryId) {
+    const { count, error: countError } = await supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', categoryId);
+
+    if (countError) throw countError;
+
+    if (count > 0) {
+        throw new Error('Kategori tidak bisa dihapus karena sudah digunakan dalam transaksi. Silakan nonaktifkan saja kategori ini.');
+    }
+
+    const { error } = await supabase
+        .from('spending_categories')
+        .delete()
+        .eq('id', categoryId);
+
+    if (error) throw error;
+
+    await logActivity({
+        action: 'delete_category',
+        entityTable: 'spending_categories',
+        entityId: categoryId,
+        description: `Kategori dihapus (ID: ${categoryId})`
+    });
+}
+
 export async function createSignatory(payload) {
     const organizationId = await getDefaultOrganizationId();
 
@@ -240,6 +267,38 @@ export async function setSignatoryActive(signatoryId, isActive) {
     });
 
     return data;
+}
+
+export async function deleteSignatory(signatoryId) {
+    if (!signatoryId) throw new Error('ID penandatangan tidak valid.');
+
+    const { count, error: countError } = await supabase
+        .from('generated_documents')
+        .select('id', { count: 'exact', head: true })
+        .or(`signer_mengetahui_id.eq.${signatoryId},signer_bendahara_id.eq.${signatoryId}`);
+
+    if (countError) {
+        console.error('Check usage error:', countError);
+        throw new Error('Gagal memeriksa penggunaan penandatangan: ' + countError.message);
+    }
+
+    if (count > 0) {
+        throw new Error(`Penandatangan tidak bisa dihapus karena sudah tercatat dalam ${count} dokumen PDF yang pernah dibuat. Silakan nonaktifkan saja.`);
+    }
+
+    const { error } = await supabase
+        .from('signatories')
+        .delete()
+        .eq('id', signatoryId);
+
+    if (error) throw error;
+
+    await logActivity({
+        action: 'delete_signatory',
+        entityTable: 'signatories',
+        entityId: signatoryId,
+        description: `Penandatangan dihapus (ID: ${signatoryId})`
+    });
 }
 
 export async function setDefaultSignatory(signatoryId, signerPosition) {

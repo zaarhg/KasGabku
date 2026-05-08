@@ -52,5 +52,47 @@
             "type": "image/png",
             "purpose": "maskable"
         }
+    ],
+    "shortcuts": [
+        {
+            "name": "Tambah Transaksi",
+            "short_name": "Input",
+            "description": "Buka halaman input transaksi baru",
+            "url": "./#transaksi",
+            "icons": [
+                {
+                    "src": "./icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Lihat Buku Kas",
+            "short_name": "Laporan",
+            "description": "Buka rekap buku kas bulanan",
+            "url": "./#buku-kas",
+            "icons": [
+                {
+                    "src": "./icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "./screenshot-dashboard.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Dashboard Kas Gabku"
+        },
+        {
+            "src": "./screenshot-transactions.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Daftar Transaksi"
+        }
     ]
 }

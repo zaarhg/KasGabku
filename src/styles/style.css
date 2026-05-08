@@ -2642,12 +2642,10 @@ textarea.form-control {
     }
 
     .book-filter-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 180px 160px minmax(0, 1fr);
     }
 
-    .book-filter-grid .form-group-wide {
-        grid-column: span 2;
-    }
+    
 }
 
 @media (max-width: 720px) {
@@ -3695,8 +3693,8 @@ textarea.form-control {
 
     .mobile-nav {
         grid-auto-flow: column;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        grid-auto-columns: unset;
+        grid-template-columns: none;
+        grid-auto-columns: 1fr;
         overflow-x: hidden;
     }
 
@@ -4054,3 +4052,273 @@ button,
         touch-action: manipulation !important;
     }
 }
+
+/* Custom Admin Action Grid Layout */
+.admin-action-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 720px) {
+    .admin-action-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Role Pill Colors on Dashboard */
+.dashboard-role-pill.role-admin {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    border-color: #fecaca !important;
+}
+
+.dashboard-role-pill.role-bendahara {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border-color: #fde68a !important;
+}
+
+.dashboard-role-pill.role-viewer {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+    border-color: #e5e7eb !important;
+}
+
+
+/* Buku Kas Document List Layout */
+.document-list-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.document-list-row .document-item {
+    flex: 1;
+    margin-bottom: 0 !important; /* Override default margin if any */
+}
+
+.document-list-row .btn-danger {
+    flex-shrink: 0;
+    height: 44px; /* Align with document-item height roughly */
+}
+
+
+/* List Pagination Layout */
+.list-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.pagination-controls .btn {
+    min-width: 40px;
+    justify-content: center;
+}
+
+
+/* Detail Transaction Attachment Layout */
+.attachment-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    margin-bottom: 8px;
+}
+
+.attachment-row .attachment-item {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+.btn-delete-note {
+    flex-shrink: 0;
+    width: 60px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    height: auto;
+}
+
+
+/* Outdated Document Styles */
+.document-item.is-outdated {
+    background: #fffbeb !important;
+    border: 1px solid #fcd34d !important;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+}
+
+.document-item.is-outdated:hover {
+    background: #fef3c7 !important;
+}
+
+.document-item.is-outdated strong {
+    color: #92400e !important;
+}
+
+.document-item.is-outdated small {
+    color: #b45309 !important;
+}
+
+
+/* Dashboard Action Colors */
+.dashboard-action-item.action-blue {
+    background: #eff6ff !important;
+    border-color: #dbeafe !important;
+}
+.dashboard-action-item.action-blue:hover {
+    background: #dbeafe !important;
+}
+.dashboard-action-item.action-blue span { color: #2563eb !important; }
+
+.dashboard-action-item.action-indigo {
+    background: #f5f3ff !important;
+    border-color: #ede9fe !important;
+}
+.dashboard-action-item.action-indigo:hover {
+    background: #ede9fe !important;
+}
+.dashboard-action-item.action-indigo span { color: #7c3aed !important; }
+
+.dashboard-action-item.action-teal {
+    background: #f0fdfa !important;
+    border-color: #ccfbf1 !important;
+}
+.dashboard-action-item.action-teal:hover {
+    background: #ccfbf1 !important;
+}
+.dashboard-action-item.action-teal span { color: #0d9488 !important; }
+
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    background: linear-gradient(135deg, #102a6b, #1e40af);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(16, 42, 107, 0.2);
+    animation: slideDown 0.4s ease-out;
+}
+
+.pwa-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pwa-banner-icon {
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+
+.pwa-banner-content strong {
+    display: block;
+    font-size: 15px;
+}
+
+.pwa-banner-content small {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.pwa-banner-actions {
+    display: flex;
+    gap: 8px;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    .pwa-install-banner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .pwa-banner-actions {
+        justify-content: flex-end;
+    }
+}
+
+
+/* --- PWA NATIVE EXPERIENCE OPTIMIZATION --- */
+
+html, body {
+    /* Mencegah fitur pull-to-refresh browser yang sering mengganggu PWA */
+    overscroll-behavior-y: none;
+    /* Mencegah perubahan ukuran font otomatis saat rotasi layar */
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    /* Mendukung area aman untuk HP dengan poni/notch */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+* {
+    /* Menghilangkan kotak abu-abu saat menyentuh tombol di mobile */
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+/* Mencegah teks terpilih secara tidak sengaja pada elemen UI */
+button, 
+a, 
+.dashboard-action-item, 
+.sidebar-item, 
+.nav-item, 
+.btn, 
+.badge {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Memastikan input tetap bisa memilih teks */
+input, 
+textarea, 
+[contenteditable=" true\] {
+ user-select: text;
+ -webkit-user-select: text;
+}
+
+/* Mengoptimalkan kehalusan scroll pada iOS */
+.page-stack, 
+.sidebar, 
+.modal-backdrop {
+ -webkit-overflow-scrolling: touch;
+}
+
+/* Mencegah menu konteks default pada ikon/logo (opsional) */
+.sidebar-logo img, 
+.pwa-banner-icon {
+ -webkit-touch-callout: none;
+}
+

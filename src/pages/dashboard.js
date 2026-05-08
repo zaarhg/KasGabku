@@ -1,4 +1,5 @@
 import { getDashboardData } from '../services/dashboard.js';
+import { getDeferredPrompt, promptPwaInstall } from '../main.js';
 
 import {
   escapeHtml,
@@ -30,7 +31,7 @@ export function renderDashboardPage({ profile }) {
       </div>
 
       <div class="dashboard-header-actions">
-        <span class="dashboard-role-pill">
+        <span class="dashboard-role-pill ${getRoleBadgeClass(profile?.role)}">
           ${escapeHtml(formatRole(profile?.role || 'viewer'))}
         </span>
 
@@ -42,6 +43,20 @@ export function renderDashboardPage({ profile }) {
 
     <div class="message-box is-hidden" id="message-box"></div>
 
+    <div id="pwa-install-banner" class="pwa-install-banner is-hidden">
+      <div class="pwa-banner-content">
+        <div class="pwa-banner-icon">📱</div>
+        <div>
+          <strong>Pasang Aplikasi Kas Gabku</strong>
+          <small>Akses lebih cepat & pengalaman layar penuh tanpa browser.</small>
+        </div>
+      </div>
+      <div class="pwa-banner-actions">
+        <button class="btn btn-small btn-primary" id="pwa-install-btn">Pasang</button>
+        <button class="btn btn-small btn-light" id="pwa-dismiss-btn">Nanti</button>
+      </div>
+    </div>
+
     <section class="dashboard-hero-grid">
       <article class="dashboard-balance-card" id="dashboard-balance">
         <div class="empty-mini">Memuat saldo...</div>
@@ -50,57 +65,38 @@ export function renderDashboardPage({ profile }) {
       <div class="dashboard-metric-grid" id="dashboard-summary"></div>
     </section>
 
-    <section class="dashboard-action-card">
-      <div class="section-heading">
-        <div>
-          <h2>Aksi Cepat</h2>
-          <p>Akses cepat ke fitur yang paling sering dipakai.</p>
-        </div>
-      </div>
-
-      <div class="dashboard-action-grid">
-        <a class="dashboard-action-item" href="#transaksi">
-          <span>↕</span>
-          <strong>Transaksi</strong>
-          <small>Catat dan cek kas masuk/keluar</small>
-        </a>
-
-        <a class="dashboard-action-item" href="#buku-kas">
-          <span>▤</span>
-          <strong>Buku Kas</strong>
-          <small>Preview dan generate buku kas</small>
-        </a>
-
-        ${profile?.role === 'admin'
+    ${profile?.role === 'admin'
       ? `
-              <a class="dashboard-action-item" href="#master-data">
-                <span>⚙</span>
-                <strong>Master Data</strong>
-                <small>Kategori dan penandatangan</small>
-              </a>
+          <section class="dashboard-action-card">
+            <div class="section-heading">
+              <div>
+                <h2>Menu Admin</h2>
+              </div>
+            </div>
 
-              <a class="dashboard-action-item" href="#admin">
+            <div class="dashboard-action-grid admin-action-grid">
+              <a class="dashboard-action-item action-blue" href="#admin">
                 <span>◉</span>
                 <strong>Admin User</strong>
                 <small>Kelola role dan status user</small>
               </a>
 
-              <a class="dashboard-action-item" href="#log">
+              <a class="dashboard-action-item action-indigo" href="#log">
                 <span>◎</span>
                 <strong>Log Aktivitas</strong>
                 <small>Audit aktivitas aplikasi</small>
               </a>
 
-              <a class="dashboard-action-item" href="#backup">
+              <a class="dashboard-action-item action-teal" href="#backup">
                 <span>⇩</span>
                 <strong>Backup</strong>
                 <small>Export data JSON</small>
               </a>
-            `
+            </div>
+          </section>
+        `
       : ''
     }
-      </div>
-    </section>
 
     <div class="dashboard-grid">
       <section class="table-card">
@@ -166,9 +162,39 @@ export function renderDashboardPage({ profile }) {
   return page;
 
   function bindEvents() {
-    page.querySelector('#refresh-dashboard-btn')?.addEventListener('click', async () => {
-      await loadDashboard();
+    page.querySelector('#refresh-dashboard-btn')?.addEventListener('click', () => {
+      loadDashboard();
     });
+
+    const onPwaAvailable = () => {
+      checkPwaPrompt();
+    };
+
+    window.addEventListener('pwa-install-available', onPwaAvailable);
+
+    page.querySelector('#pwa-install-btn')?.addEventListener('click', async () => {
+      const success = await promptPwaInstall();
+      if (success) {
+        page.querySelector('#pwa-install-banner')?.classList.add('is-hidden');
+      }
+    });
+
+    page.querySelector('#pwa-dismiss-btn')?.addEventListener('click', () => {
+      localStorage.setItem('pwa-dismissed', 'true');
+      page.querySelector('#pwa-install-banner')?.classList.add('is-hidden');
+    });
+  }
+
+  function checkPwaPrompt() {
+    const banner = page.querySelector('#pwa-install-banner');
+    if (!banner) return;
+
+    const isDismissed = localStorage.getItem('pwa-dismissed');
+    const prompt = getDeferredPrompt();
+
+    if (prompt && !isDismissed) {
+      banner.classList.remove('is-hidden');
+    }
   }
 
   async function loadDashboard() {
@@ -182,6 +208,7 @@ export function renderDashboardPage({ profile }) {
       renderExpenseByCategory();
       renderDocuments();
       renderRecentTransactions();
+      checkPwaPrompt();
 
       hideMessage();
     } catch (error) {
@@ -481,4 +508,12 @@ function formatRole(role) {
   if (role === 'viewer') return 'Viewer';
 
   return role || '-';
+}
+
+function getRoleBadgeClass(role) {
+  if (role === 'admin') return 'role-admin';
+  if (role === 'bendahara') return 'role-bendahara';
+  if (role === 'viewer') return 'role-viewer';
+
+  return '';
 }

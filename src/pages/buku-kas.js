@@ -1,7 +1,8 @@
 import {
   getActiveSignatories,
   getBukuKasPreview,
-  generateBukuKasPdf
+  generateBukuKasPdf,
+  deleteGeneratedDocument
 } from '../services/pdf.js';
 
 import {
@@ -29,7 +30,8 @@ export function renderBukuKasPage({ profile }) {
     month: getCurrentMonth(),
     year: getCurrentYear(),
     preview: null,
-    signatories: []
+    signatories: [],
+    documentPage: 1
   };
 
   page.innerHTML = `
@@ -88,7 +90,7 @@ export function renderBukuKasPage({ profile }) {
           </select>
         </div>
 
-        <div class="form-group form-group-wide">
+        <div class="form-group">
           <label for="book-signer">Penandatangan Buku Kas</label>
           <select class="form-control" id="book-signer">
             <option value="">Memuat penandatangan...</option>
@@ -187,6 +189,29 @@ export function renderBukuKasPage({ profile }) {
     page.querySelector('#generate-book-btn')?.addEventListener('click', async () => {
       await handleGenerateBukuKas();
     });
+
+    page.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+
+      const action = button.dataset.action;
+      const id = button.dataset.id;
+
+      if (action === 'delete-document') {
+        await handleDeleteDocument(id);
+      }
+
+      if (action === 'doc-prev') {
+        state.documentPage = Math.max(1, state.documentPage - 1);
+        renderDocuments();
+      }
+
+      if (action === 'doc-next') {
+        const totalPages = Math.ceil((state.preview.documents || []).length / 3);
+        state.documentPage = Math.min(totalPages, state.documentPage + 1);
+        renderDocuments();
+      }
+    });
   }
 
   async function loadInitialData() {
@@ -210,6 +235,8 @@ export function renderBukuKasPage({ profile }) {
     try {
       renderLoadingRows();
       updatePeriodTitle();
+
+      state.documentPage = 1;
 
       state.preview = await getBukuKasPreview({
         month: state.month,
@@ -438,28 +465,77 @@ export function renderBukuKasPage({ profile }) {
       return;
     }
 
+    const itemsPerPage = 3;
+    const totalPages = Math.ceil(documents.length / itemsPerPage);
+    const currentPage = Math.min(state.documentPage, totalPages);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const displayedDocuments = documents.slice(startIndex, startIndex + itemsPerPage);
+
     root.innerHTML = `
       <div class="document-list">
-        ${documents
+        ${displayedDocuments
         .map((document) => {
+          const isAdmin = profile?.role === 'admin';
           return `
-              <a
-                class="document-item"
-                href="${escapeHtml(document.file_url || '#')}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span class="attachment-icon">📄</span>
-                <span>
-                  <strong>${escapeHtml(document.file_name || 'Buku Kas.pdf')}</strong>
-                  <small>${document.generated_at ? formatDateTime(document.generated_at) : '-'}</small>
-                </span>
-              </a>
+              <div class="document-list-row">
+                <a
+                  class="document-item"
+                  href="${escapeHtml(document.file_url || '#')}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="attachment-icon">📄</span>
+                  <span>
+                    <strong>${escapeHtml(document.file_name || 'Buku Kas.pdf')}</strong>
+                    <small>${document.generated_at ? formatDateTime(document.generated_at) : '-'}</small>
+                  </span>
+                </a>
+                ${isAdmin ? `
+                  <button class="btn btn-small btn-danger" type="button" data-action="delete-document" data-id="${document.id}" title="Hapus PDF">
+                    Hapus
+                  </button>
+                ` : ''}
+              </div>
             `;
         })
         .join('')}
       </div>
+
+      ${totalPages > 1 ? `
+        <div class="list-pagination">
+          <span class="pagination-info">Halaman ${currentPage} dari ${totalPages}</span>
+          <div class="pagination-controls">
+            <button class="btn btn-light btn-small" type="button" data-action="doc-prev" ${currentPage === 1 ? 'disabled' : ''}>
+              ←
+            </button>
+            <button class="btn btn-light btn-small" type="button" data-action="doc-next" ${currentPage === totalPages ? 'disabled' : ''}>
+              →
+            </button>
+          </div>
+        </div>
+      ` : ''}
     `;
+  }
+
+  async function handleDeleteDocument(documentId) {
+    const ok = await showConfirmModal({
+      title: 'Hapus Dokumen PDF?',
+      message: 'Data rekaman PDF ini akan dihapus dari aplikasi. File di Google Drive tetap ada namun tidak lagi terhubung di sini.',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      tone: 'danger'
+    });
+
+    if (!ok) return;
+
+    try {
+      setMessage('Menghapus dokumen...', 'info');
+      await deleteGeneratedDocument(documentId);
+      setMessage('Dokumen berhasil dihapus.', 'success');
+      await loadPreview();
+    } catch (error) {
+      setMessage(error.message || String(error), 'error');
+    }
   }
 
   function renderPeriodNote() {
@@ -653,7 +729,7 @@ function renderYearOptions(selectedYear) {
   const currentYear = getCurrentYear();
   const years = [];
 
-  for (let year = currentYear - 2; year <= currentYear + 1; year += 1) {
+  for (let year = 2026; year <= 2030; year += 1) {
     years.push(year);
   }
 

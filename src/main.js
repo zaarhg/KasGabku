@@ -3,6 +3,39 @@ import { startApp } from './app.js';
 
 startApp();
 setupServiceWorker();
+setupInstallPrompt();
+
+let deferredPrompt = null;
+
+function setupInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent Chrome 67 and earlier from automatically showing the prompt
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Dispatch event so UI can react
+        window.dispatchEvent(new CustomEvent('pwa-install-available'));
+    });
+
+    window.addEventListener('appinstalled', () => {
+        console.info('Kas Gabku telah diinstal ke perangkat.');
+        deferredPrompt = null;
+        window.dispatchEvent(new CustomEvent('pwa-installed'));
+    });
+}
+
+export function getDeferredPrompt() {
+    return deferredPrompt;
+}
+
+export async function promptPwaInstall() {
+    if (!deferredPrompt) return false;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    return outcome === 'accepted';
+}
 
 function setupServiceWorker() {
     if (!('serviceWorker' in navigator)) return;

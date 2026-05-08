@@ -445,6 +445,22 @@ async function saveGeneratedDocument({
     return data;
 }
 
+export async function deleteGeneratedDocument(id) {
+    const { error } = await supabase
+        .from('generated_documents')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+
+    await logActivity({
+        action: 'delete_document',
+        entityTable: 'generated_documents',
+        entityId: id,
+        description: `Dokumen PDF dihapus (ID: ${id})`
+    });
+}
+
 function buildBukuKasRows(transactions, openingBalance) {
     let runningBalance = Number(openingBalance || 0);
 

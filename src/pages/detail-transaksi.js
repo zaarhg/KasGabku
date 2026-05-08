@@ -7,12 +7,14 @@ import {
 
 import {
   uploadTransactionNote,
-  getSignedUrlsForAttachments
+  getSignedUrlsForAttachments,
+  deleteTransactionNote
 } from '../services/storage.js';
 
 import {
   getActiveSignatories,
-  generateBend26Pdf
+  generateBend26Pdf,
+  deleteGeneratedDocument
 } from '../services/pdf.js';
 
 import {
@@ -96,6 +98,42 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
 
       if (action === 'view-notes') {
         await handleViewNotes();
+      }
+
+      if (action === 'delete-note') {
+        const id = button.dataset.id;
+        await handleDeleteNote(id);
+      }
+
+      if (action === 'view-outdated-doc') {
+        await showContentModal({
+          title: 'Dokumen Kadaluwarsa',
+          message: 'Dokumen Bend 26 ini sudah tidak valid karena ada perubahan data atau nota setelah dokumen ini dibuat.',
+          bodyHtml: `
+            <p style="margin-top: 12px; color: var(--text-soft); font-size: 14px;">
+              Untuk menjaga integritas data laporan, dokumen lama tidak dapat dibuka. Silakan tekan tombol <strong>Generate Bend 26</strong> untuk memperbarui dokumen sesuai dengan data terbaru.
+            </p>
+          `,
+          tone: 'warning'
+        });
+      }
+
+      if (action === 'generate-blocked') {
+        await showContentModal({
+          title: 'Dokumen Sudah Sesuai',
+          message: 'Bend 26 yang ada sudah mencerminkan data dan nota terbaru.',
+          bodyHtml: `
+            <p style="margin-top: 12px; color: var(--text-soft); font-size: 14px;">
+              Tidak ada perubahan pada nominal, deskripsi, maupun foto nota sejak Bend 26 terakhir dibuat. Anda tidak perlu melakukan generate ulang.
+            </p>
+          `,
+          tone: 'primary'
+        });
+      }
+
+      if (action === 'delete-document') {
+        const id = button.dataset.id;
+        await handleDeleteDocument(id);
       }
 
       if (action === 'finalize') {
@@ -335,18 +373,26 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       <div class="attachment-list">
         ${attachments
         .map((attachment, index) => {
+          const isAdmin = profile?.role === 'admin';
           return `
-              <button
-                class="attachment-item"
-                type="button"
-                data-action="view-notes"
-              >
-                <span class="attachment-icon">🧾</span>
-                <span>
-                  <strong>${escapeHtml(attachment.file_name || `Nota ${index + 1}`)}</strong>
-                  <small>${formatFileSize(attachment.file_size)} • ${formatDateTime(attachment.created_at)}</small>
-                </span>
-              </button>
+              <div class="attachment-row">
+                <button
+                  class="attachment-item"
+                  type="button"
+                  data-action="view-notes"
+                >
+                  <span class="attachment-icon">🧾</span>
+                  <span>
+                    <strong>${escapeHtml(attachment.file_name || `Nota ${index + 1}`)}</strong>
+                    <small>${formatFileSize(attachment.file_size)} • ${formatDateTime(attachment.created_at)}</small>
+                  </span>
+                </button>
+                ${isAdmin ? `
+                  <button class="btn btn-small btn-danger btn-delete-note" type="button" data-action="delete-note" data-id="${attachment.id}" title="Hapus Foto">
+                    Hapus
+                  </button>
+                ` : ''}
+              </div>
             `;
         })
         .join('')}
@@ -363,10 +409,43 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       `;
     }
 
+    const transaction = state.transaction;
+
     return `
       <div class="document-list">
         ${documents
         .map((document) => {
+          // Check if document is outdated (Bend 26 only)
+          const isBend26 = document.document_type === 'bend_26';
+          const isOutdated = isBend26 && transaction.updated_at && document.generated_at &&
+            new Date(transaction.updated_at).getTime() > new Date(document.generated_at).getTime() + 2000;
+
+          if (isOutdated) {
+            const isAdmin = profile?.role === 'admin';
+            return `
+              <div class="attachment-row">
+                <button
+                  class="document-item is-outdated"
+                  type="button"
+                  data-action="view-outdated-doc"
+                >
+                  <span class="attachment-icon">⚠️</span>
+                  <span>
+                    <strong>${escapeHtml(formatDocumentType(document.document_type))} (Kadaluwarsa)</strong>
+                    <small>
+                      Dibuat ${document.generated_at ? formatDateTime(document.generated_at) : '-'} • Nota berubah.
+                    </small>
+                  </span>
+                </button>
+                ${isAdmin ? `
+                  <button class="btn btn-small btn-danger btn-delete-note" type="button" data-action="delete-document" data-id="${document.id}" title="Hapus Dokumen">
+                    Hapus
+                  </button>
+                ` : ''}
+              </div>
+            `;
+          }
+
           return `
               <a
                 class="document-item"
@@ -422,19 +501,28 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       `;
     }
 
+    const latestBend26 = bend26Documents[0];
+    const isUpdateNeeded = !latestBend26 ||
+      (transaction.updated_at && latestBend26.generated_at &&
+        new Date(transaction.updated_at).getTime() > new Date(latestBend26.generated_at).getTime() + 2000);
+
     return `
       <div class="generate-doc-box">
         <div>
           <strong>Generate Bend 26</strong>
           <span>
-            ${bend26Documents.length
-        ? `${bend26Documents.length} dokumen Bend 26 sudah dibuat. Kamu tetap bisa generate ulang bila perlu.`
-        : 'Buat PDF Bend 26 dari data transaksi ini.'
+            ${isUpdateNeeded
+        ? (latestBend26 ? 'Nota/data telah berubah. Silakan generate ulang.' : 'Buat PDF Bend 26 dari data transaksi ini.')
+        : 'Dokumen sudah sesuai dengan data & nota terbaru.'
       }
           </span>
         </div>
 
-        <button class="btn btn-primary full-width" type="button" data-action="generate-bend26">
+        <button 
+          class="btn ${isUpdateNeeded ? 'btn-primary' : 'btn-light'} full-width" 
+          type="button" 
+          data-action="${isUpdateNeeded ? 'generate-bend26' : 'generate-blocked'}"
+        >
           Generate Bend 26
         </button>
       </div>
@@ -789,6 +877,52 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       setTimeout(() => {
         window.location.hash = 'transaksi';
       }, 500);
+    } catch (error) {
+      setMessage(error.message || String(error), 'error');
+    }
+  }
+
+  async function handleDeleteNote(attachmentId) {
+    if (!attachmentId) return;
+
+    const ok = await showConfirmModal({
+      title: 'Hapus Foto Nota?',
+      message: 'Apakah Anda yakin ingin menghapus foto nota ini? Tindakan ini tidak bisa dibatalkan.',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      tone: 'danger'
+    });
+
+    if (!ok) return;
+
+    try {
+      setMessage('Menghapus foto...', 'info');
+      await deleteTransactionNote(attachmentId);
+      setMessage('Foto nota berhasil dihapus.', 'success');
+      await loadDetail();
+    } catch (error) {
+      setMessage(error.message || String(error), 'error');
+    }
+  }
+
+  async function handleDeleteDocument(id) {
+    if (!id) return;
+
+    const ok = await showConfirmModal({
+      title: 'Hapus Dokumen?',
+      message: 'Apakah Anda yakin ingin menghapus dokumen PDF ini? Tindakan ini tidak bisa dibatalkan.',
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      tone: 'danger'
+    });
+
+    if (!ok) return;
+
+    try {
+      setMessage('Menghapus dokumen...', 'info');
+      await deleteGeneratedDocument(id);
+      setMessage('Dokumen berhasil dihapus.', 'success');
+      await loadDetail();
     } catch (error) {
       setMessage(error.message || String(error), 'error');
     }

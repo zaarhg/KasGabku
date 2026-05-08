@@ -7,7 +7,9 @@ import {
   createSignatory,
   updateSignatory,
   setSignatoryActive,
-  setDefaultSignatory
+  setDefaultSignatory,
+  deleteCategory,
+  deleteSignatory
 } from '../services/master-data.js';
 
 import {
@@ -16,7 +18,8 @@ import {
 } from '../utils/format.js';
 
 import {
-  showConfirmModal
+  showConfirmModal,
+  showContentModal
 } from '../utils/modal.js';
 
 export function renderMasterDataPage({ profile }) {
@@ -317,6 +320,14 @@ export function renderMasterDataPage({ profile }) {
       if (action === 'set-default-signatory') {
         await handleSetDefaultSignatory(id);
       }
+
+      if (action === 'delete-category') {
+        await handleDeleteCategory(id);
+      }
+
+      if (action === 'delete-signatory') {
+        await handleDeleteSignatory(id);
+      }
     });
   }
 
@@ -502,6 +513,74 @@ export function renderMasterDataPage({ profile }) {
       await loadData();
     } catch (error) {
       setMessage(error.message || String(error), 'error');
+    }
+  }
+
+  async function handleDeleteCategory(categoryId) {
+    const category = state.categories.find((item) => item.id === categoryId);
+    if (!category) return;
+
+    const ok = await showConfirmModal({
+      title: 'Hapus Kategori?',
+      message: `Apakah Anda yakin ingin menghapus kategori "${category.name}"? Tindakan ini tidak bisa dibatalkan.`,
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      tone: 'danger'
+    });
+
+    if (!ok) return;
+
+    try {
+      setMessage('Menghapus kategori...', 'info');
+      await deleteCategory(categoryId);
+      setMessage('Kategori berhasil dihapus.', 'success');
+      await loadData();
+    } catch (error) {
+      if (error.message.includes('digunakan dalam transaksi')) {
+        await showContentModal({
+          title: 'Kategori Sedang Digunakan',
+          message: error.message,
+          tone: 'warning'
+        });
+      } else {
+        setMessage(error.message || String(error), 'error');
+      }
+    }
+  }
+
+  async function handleDeleteSignatory(signatoryId) {
+    const signatory = state.signatories.find((item) => item.id === signatoryId);
+    if (!signatory) return;
+
+    const ok = await showConfirmModal({
+      title: 'Hapus Penandatangan?',
+      message: `Apakah Anda yakin ingin menghapus "${signatory.full_name}"? Tindakan ini tidak bisa dibatalkan.`,
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      tone: 'danger'
+    });
+
+    if (!ok) return;
+
+    try {
+      if (!signatoryId) throw new Error('ID penandatangan tidak ditemukan.');
+      
+      setMessage('Menghapus penandatangan...', 'info');
+      await deleteSignatory(signatoryId);
+      setMessage('Penandatangan berhasil dihapus.', 'success');
+      
+      await loadData();
+    } catch (error) {
+      console.error('Delete signatory error:', error);
+      if (error.message.includes('tercatat dalam') || error.message.includes('dokumen PDF')) {
+        await showContentModal({
+          title: 'Nama Masih Digunakan',
+          message: error.message,
+          tone: 'warning'
+        });
+      } else {
+        setMessage(error.message || String(error), 'error');
+      }
     }
   }
 
@@ -700,11 +779,14 @@ export function renderMasterDataPage({ profile }) {
             </td>
             <td>
               <div class="actions-row master-action-row">
-                <button class="btn btn-small btn-light" type="button" data-action="edit-category" data-id="${category.id}">
+                <button class="btn btn-small btn-light" type="button" data-action="edit-category" data-id="${category.id}" title="Edit">
                   Edit
                 </button>
-                <button class="btn btn-small ${category.is_active ? 'btn-danger' : 'btn-primary'}" type="button" data-action="toggle-category" data-id="${category.id}">
-                  ${category.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                <button class="btn btn-small ${category.is_active ? 'btn-light' : 'btn-primary'}" type="button" data-action="toggle-category" data-id="${category.id}" title="${category.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                  ${category.is_active ? 'Nonaktif' : 'Aktifkan'}
+                </button>
+                <button class="btn btn-small btn-danger" type="button" data-action="delete-category" data-id="${category.id}" title="Hapus">
+                  Hapus
                 </button>
               </div>
             </td>
@@ -759,20 +841,23 @@ export function renderMasterDataPage({ profile }) {
             </td>
             <td>
               <div class="actions-row master-action-row">
-                <button class="btn btn-small btn-light" type="button" data-action="edit-signatory" data-id="${signatory.id}">
+                <button class="btn btn-small btn-light" type="button" data-action="edit-signatory" data-id="${signatory.id}" title="Edit">
                   Edit
                 </button>
-                ${signatory.is_active
+                <button class="btn btn-small ${signatory.is_active ? 'btn-light' : 'btn-primary'}" type="button" data-action="toggle-signatory" data-id="${signatory.id}" title="${signatory.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                  ${signatory.is_active ? 'Nonaktif' : 'Aktifkan'}
+                </button>
+                ${!signatory.is_default
             ? `
-                      <button class="btn btn-small btn-light" type="button" data-action="set-default-signatory" data-id="${signatory.id}">
+                      <button class="btn btn-small btn-light" type="button" data-action="set-default-signatory" data-id="${signatory.id}" title="Jadikan Default">
                         Default
+                      </button>
+                      <button class="btn btn-small btn-danger" type="button" data-action="delete-signatory" data-id="${signatory.id}" title="Hapus">
+                        Hapus
                       </button>
                     `
             : ''
           }
-                <button class="btn btn-small ${signatory.is_active ? 'btn-danger' : 'btn-primary'}" type="button" data-action="toggle-signatory" data-id="${signatory.id}">
-                  ${signatory.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                </button>
               </div>
             </td>
           </tr>

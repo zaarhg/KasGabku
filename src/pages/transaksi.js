@@ -710,7 +710,7 @@ function renderYearOptions(selectedYear) {
   const currentYear = getCurrentYear();
   const years = [];
 
-  for (let year = currentYear - 2; year <= currentYear + 1; year += 1) {
+  for (let year = 2026; year <= 2030; year += 1) {
     years.push(year);
   }
 
