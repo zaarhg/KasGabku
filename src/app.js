@@ -110,34 +110,37 @@ function isStandalone() {
 }
 
 function renderPwaGate(root) {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
   root.innerHTML = `
     <div class="pwa-gate">
       <div class="pwa-gate-content">
         <div class="pwa-gate-icon">
           <img src="${publicAsset('icon-512.png')}" alt="Kas Gabku">
         </div>
-        <h1>Instal Kas Gabku</h1>
-        <p>Aplikasi ini hanya dapat digunakan melalui aplikasi yang terpasang di HP Anda untuk alasan keamanan dan pengalaman terbaik.</p>
+        <h1>Akses Terbatas</h1>
+        <p>Kas Gabku hanya dapat dibuka melalui aplikasi yang terpasang di HP untuk menjamin keamanan data Anda.</p>
         
         <div class="pwa-gate-steps">
           <div class="pwa-step">
             <span class="step-number">1</span>
-            <span>Tekan tombol <strong>"Instal"</strong> di bawah ini atau melalui menu browser Anda.</span>
+            <div class="step-body">
+              <span>${isIOS ? 'Tekan ikon <strong>"Share"</strong> (kotak dengan panah atas) dan pilih <strong>"Add to Home Screen"</strong>.' : 'Tekan tombol <strong>"Instal Aplikasi"</strong> di bawah ini.'}</span>
+              <button class="btn btn-primary btn-block" id="pwa-gate-install-btn" style="display: none; margin-top: 12px;">
+                Instal Aplikasi
+              </button>
+            </div>
           </div>
           <div class="pwa-step">
             <span class="step-number">2</span>
-            <span>Buka aplikasi dari layar utama (Home Screen) Anda.</span>
+            <div class="step-body">
+              <span>Buka ikon <strong>"Kas Gabku"</strong> yang muncul di layar utama (Home Screen) HP Anda.</span>
+            </div>
           </div>
         </div>
 
-        <div class="pwa-gate-actions">
-          <button class="btn btn-primary btn-lg btn-block" id="pwa-gate-install-btn">
-            Instal Sekarang
-          </button>
-        </div>
-
         <div class="pwa-gate-footer">
-          <small>Jika tombol tidak berfungsi, gunakan menu browser Anda dan pilih <strong>"Tambahkan ke Layar Utama"</strong> atau <strong>"Instal Aplikasi"</strong>.</small>
+          <p>Jika tombol instal tidak muncul, buka menu browser Anda (titik tiga atau tanda panah) dan cari menu <strong>"Instal Aplikasi"</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.</p>
         </div>
       </div>
     </div>
@@ -145,10 +148,11 @@ function renderPwaGate(root) {
 
   const installBtn = root.querySelector('#pwa-gate-install-btn');
   
-  // Impor dinamis untuk menghindari circular dependency
   import('./main.js').then(({ promptPwaInstall, getDeferredPrompt }) => {
     const updateBtnVisibility = () => {
-        if (getDeferredPrompt()) {
+        // Hanya tampilkan tombol jika prompt tersedia dan bukan di iOS 
+        // (karena iOS tidak mendukung programmatic prompt)
+        if (getDeferredPrompt() && !isIOS) {
             installBtn.style.display = 'block';
         } else {
             installBtn.style.display = 'none';
@@ -159,11 +163,7 @@ function renderPwaGate(root) {
     window.addEventListener('pwa-install-available', updateBtnVisibility);
 
     installBtn.addEventListener('click', async () => {
-      const success = await promptPwaInstall();
-      if (success) {
-        // Otomatis pindah jika sudah terinstall (beberapa browser langsung pindah)
-        console.log('Instalasi berhasil');
-      }
+      await promptPwaInstall();
     });
   });
 }
