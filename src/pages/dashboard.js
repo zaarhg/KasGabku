@@ -22,22 +22,17 @@ export function renderDashboardPage({ profile }) {
 
   page.innerHTML = `
     <div class="page-header dashboard-page-header">
-      <div>
+      <div class="dashboard-info-header">
         <p class="eyebrow">Beranda</p>
         <h1 class="page-title">Dashboard Kas Gabku</h1>
-        <p class="page-description">
-          Ringkasan saldo, transaksi bulan ini, pengeluaran per kategori, dan dokumen terbaru.
-        </p>
-      </div>
-
-      <div class="dashboard-header-actions">
-        <span class="dashboard-role-pill ${getRoleBadgeClass(profile?.role)}">
-          ${escapeHtml(formatRole(profile?.role || 'viewer'))}
-        </span>
-
-        <button class="btn btn-light" type="button" id="refresh-dashboard-btn">
-          Refresh
-        </button>
+        <div class="description-with-pill">
+          <p class="page-description">
+            Ringkasan saldo, transaksi, pengeluaran per kategori, dan dokumen terbaru.
+          </p>
+          <span class="dashboard-role-pill ${getRoleBadgeClass(profile?.role)}">
+            ${escapeHtml(formatRole(profile?.role || 'viewer'))}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -162,7 +157,7 @@ export function renderDashboardPage({ profile }) {
   return page;
 
   function bindEvents() {
-    page.querySelector('#refresh-dashboard-btn')?.addEventListener('click', () => {
+    window.addEventListener('app-refresh-request', () => {
       loadDashboard();
     });
 

@@ -76,6 +76,12 @@ function publicAsset(path) {
 export async function startApp() {
   const root = getRoot();
 
+  // PWA Gate: Hanya izinkan akses jika di dalam mode standalone (terinstall)
+  if (!isStandalone() && !import.meta.env.DEV) {
+    renderPwaGate(root);
+    return;
+  }
+
   bindHashChange(root);
   renderBoot(root);
 
@@ -93,6 +99,73 @@ export async function startApp() {
     console.error(error);
     renderLogin(root, error.message);
   }
+}
+
+function isStandalone() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+}
+
+function renderPwaGate(root) {
+  root.innerHTML = `
+    <div class="pwa-gate">
+      <div class="pwa-gate-content">
+        <div class="pwa-gate-icon">
+          <img src="${publicAsset('icon-512.png')}" alt="Kas Gabku">
+        </div>
+        <h1>Instal Kas Gabku</h1>
+        <p>Aplikasi ini hanya dapat digunakan melalui aplikasi yang terpasang di HP Anda untuk alasan keamanan dan pengalaman terbaik.</p>
+        
+        <div class="pwa-gate-steps">
+          <div class="pwa-step">
+            <span class="step-number">1</span>
+            <span>Tekan tombol <strong>"Instal"</strong> di bawah ini atau melalui menu browser Anda.</span>
+          </div>
+          <div class="pwa-step">
+            <span class="step-number">2</span>
+            <span>Buka aplikasi dari layar utama (Home Screen) Anda.</span>
+          </div>
+        </div>
+
+        <div class="pwa-gate-actions">
+          <button class="btn btn-primary btn-lg btn-block" id="pwa-gate-install-btn">
+            Instal Sekarang
+          </button>
+        </div>
+
+        <div class="pwa-gate-footer">
+          <small>Jika tombol tidak berfungsi, gunakan menu browser Anda dan pilih <strong>"Tambahkan ke Layar Utama"</strong> atau <strong>"Instal Aplikasi"</strong>.</small>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const installBtn = root.querySelector('#pwa-gate-install-btn');
+  
+  // Impor dinamis untuk menghindari circular dependency
+  import('./main.js').then(({ promptPwaInstall, getDeferredPrompt }) => {
+    const updateBtnVisibility = () => {
+        if (getDeferredPrompt()) {
+            installBtn.style.display = 'block';
+        } else {
+            installBtn.style.display = 'none';
+        }
+    };
+
+    updateBtnVisibility();
+    window.addEventListener('pwa-install-available', updateBtnVisibility);
+
+    installBtn.addEventListener('click', async () => {
+      const success = await promptPwaInstall();
+      if (success) {
+        // Otomatis pindah jika sudah terinstall (beberapa browser langsung pindah)
+        console.log('Instalasi berhasil');
+      }
+    });
+  });
 }
 
 function bindHashChange(root) {
@@ -186,6 +259,12 @@ function renderShell(root) {
   root.querySelectorAll('[data-logout]').forEach((element) => {
     element.addEventListener('click', async () => {
       await handleLogout(root);
+    });
+  });
+
+  root.querySelectorAll('[data-refresh]').forEach((element) => {
+    element.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('app-refresh-request'));
     });
   });
 }
@@ -325,9 +404,14 @@ function renderMobileTopbar() {
         <span>Kas Gabku</span>
       </div>
 
-      <button class="btn btn-danger" type="button" data-logout>
-        Keluar
-      </button>
+      <div class="mobile-topbar-actions">
+        <button class="btn btn-topbar btn-refresh" type="button" data-refresh title="Refresh Data">
+          Refresh
+        </button>
+        <button class="btn btn-topbar btn-logout" type="button" data-logout>
+          Keluar
+        </button>
+      </div>
     </header>
   `;
 }

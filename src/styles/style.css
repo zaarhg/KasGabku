@@ -2645,7 +2645,7 @@ textarea.form-control {
         grid-template-columns: 180px 160px minmax(0, 1fr);
     }
 
-    
+
 }
 
 @media (max-width: 720px) {
@@ -3523,8 +3523,23 @@ textarea.form-control {
         padding-inline: 14px;
     }
 
+    .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mobile-brand img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+    }
+
     .mobile-brand span {
-        font-size: 14px;
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--blue-900);
+        letter-spacing: -0.02em;
     }
 
     .page-header {
@@ -3636,15 +3651,6 @@ textarea.form-control {
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-    }
-
-    .dashboard-page .dashboard-header-actions .dashboard-role-pill {
-        flex: 0 0 auto;
-    }
-
-    .dashboard-page .dashboard-header-actions .btn {
-        width: auto;
-        flex: 0 0 auto;
     }
 
     .transaksi-page #refresh-btn {
@@ -4094,12 +4100,14 @@ button,
 
 .document-list-row .document-item {
     flex: 1;
-    margin-bottom: 0 !important; /* Override default margin if any */
+    margin-bottom: 0 !important;
+    /* Override default margin if any */
 }
 
 .document-list-row .btn-danger {
     flex-shrink: 0;
-    height: 44px; /* Align with document-item height roughly */
+    height: 44px;
+    /* Align with document-item height roughly */
 }
 
 
@@ -4181,28 +4189,40 @@ button,
     background: #eff6ff !important;
     border-color: #dbeafe !important;
 }
+
 .dashboard-action-item.action-blue:hover {
     background: #dbeafe !important;
 }
-.dashboard-action-item.action-blue span { color: #2563eb !important; }
+
+.dashboard-action-item.action-blue span {
+    color: #2563eb !important;
+}
 
 .dashboard-action-item.action-indigo {
     background: #f5f3ff !important;
     border-color: #ede9fe !important;
 }
+
 .dashboard-action-item.action-indigo:hover {
     background: #ede9fe !important;
 }
-.dashboard-action-item.action-indigo span { color: #7c3aed !important; }
+
+.dashboard-action-item.action-indigo span {
+    color: #7c3aed !important;
+}
 
 .dashboard-action-item.action-teal {
     background: #f0fdfa !important;
     border-color: #ccfbf1 !important;
 }
+
 .dashboard-action-item.action-teal:hover {
     background: #ccfbf1 !important;
 }
-.dashboard-action-item.action-teal span { color: #0d9488 !important; }
+
+.dashboard-action-item.action-teal span {
+    color: #0d9488 !important;
+}
 
 
 /* PWA Install Banner */
@@ -4253,8 +4273,15 @@ button,
 }
 
 @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media (max-width: 600px) {
@@ -4262,6 +4289,7 @@ button,
         flex-direction: column;
         align-items: stretch;
     }
+
     .pwa-banner-actions {
         justify-content: flex-end;
     }
@@ -4270,7 +4298,8 @@ button,
 
 /* --- PWA NATIVE EXPERIENCE OPTIMIZATION --- */
 
-html, body {
+html,
+body {
     /* Mencegah fitur pull-to-refresh browser yang sering mengganggu PWA */
     overscroll-behavior-y: none;
     /* Mencegah perubahan ukuran font otomatis saat rotasi layar */
@@ -4290,35 +4319,227 @@ body {
 }
 
 /* Mencegah teks terpilih secara tidak sengaja pada elemen UI */
-button, 
-a, 
-.dashboard-action-item, 
-.sidebar-item, 
-.nav-item, 
-.btn, 
+button,
+a,
+.dashboard-action-item,
+.sidebar-item,
+.nav-item,
+.btn,
 .badge {
     user-select: none;
     -webkit-user-select: none;
 }
 
 /* Memastikan input tetap bisa memilih teks */
-input, 
-textarea, 
-[contenteditable=" true\] {
- user-select: text;
- -webkit-user-select: text;
+input,
+textarea,
+[contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 /* Mengoptimalkan kehalusan scroll pada iOS */
-.page-stack, 
-.sidebar, 
+.page-stack,
+.sidebar,
 .modal-backdrop {
- -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Mencegah menu konteks default pada ikon/logo (opsional) */
-.sidebar-logo img, 
+.sidebar-logo img,
 .pwa-banner-icon {
- -webkit-touch-callout: none;
+    -webkit-touch-callout: none;
+}
+
+
+/* Mobile Dashboard Title Enhancement */
+@media (max-width: 768px) {
+    .dashboard-page .page-title {
+        font-size: 32px !important;
+        font-weight: 800 !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.04em !important;
+        margin: 2px 0 10px 0 !important;
+        background: linear-gradient(135deg, #102a6b, #1e40af, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: block;
+    }
+
+    .dashboard-page .eyebrow {
+        font-size: 12px !important;
+        letter-spacing: 0.15em !important;
+        text-transform: uppercase !important;
+        color: #3b82f6 !important;
+        font-weight: 800 !important;
+        margin-bottom: 2px !important;
+    }
+
+    .dashboard-page .page-description {
+        font-size: 15px !important;
+        line-height: 1.6 !important;
+        color: var(--gray-600) !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+}
+
+
+
+/* Mobile Topbar Actions */
+.mobile-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-topbar {
+    padding: 6px 14px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+}
+
+.btn-topbar:active {
+    transform: scale(0.95) !important;
+    opacity: 0.8 !important;
+}
+
+.btn-refresh {
+    background: #eff6ff !important;
+    border: 1px solid #dbeafe !important;
+    color: #1d4ed8 !important;
+}
+
+.btn-logout,
+[data-logout] {
+    background: #e64040 !important;
+    /* Marah maroon (Sama dengan tulisan Admin) */
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 10px rgba(153, 27, 27, 0.2) !important;
+}
+/* Dashboard Header Layout Enhancements */
+.description-with-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+}
+
+.description-with-pill .page-description {
+    margin: 0;
+    flex: 1;
+}
+
+.description-with-pill .dashboard-role-pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .description-with-pill {
+        align-items: center;
+    }
+}
+
+
+/* PWA GATE STYLES */
+.pwa-gate {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+    text-align: center;
+}
+
+.pwa-gate-content {
+    max-width: 400px;
+    background: white;
+    padding: 40px 24px;
+    border-radius: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    animation: fadeInScale 0.4s ease-out;
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.pwa-gate-icon img {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 24px;
+    border-radius: 20px;
+    box-shadow: 0 8px 16px rgba(16, 42, 107, 0.1);
+}
+
+.pwa-gate h1 {
+    font-size: 24px;
+    color: #102a6b;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+}
+
+.pwa-gate p {
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 32px;
+}
+
+.pwa-gate-steps {
+    text-align: left;
+    background: #f1f5f9;
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+}
+
+.pwa-step {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #334155;
+}
+
+.pwa-step:last-child { margin-bottom: 0; }
+
+.step-number {
+    background: #1d4ed8;
+    color: white;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.pwa-gate-footer {
+    margin-top: 24px;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
