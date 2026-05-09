@@ -61,20 +61,32 @@ export async function generateBend26Pdf({
     }
 
     if (!signerMengetahuiId || !signerBendaharaId) {
-        throw new Error('Penandatangan Bend 26 belum dipilih.');
+        throw new Error('Penandatangan Bend 26 (Mengetahui & Bendahara) belum dipilih.');
     }
+
+    const signerPenerimaId = transaction.signer_penerima_id;
 
     const organizationId = transaction.organization_id || await getDefaultOrganizationId();
 
     const [organization, signers, currentUser, noteImageUrl] = await Promise.all([
         getOrganization(organizationId),
-        getSigners([signerMengetahuiId, signerBendaharaId]),
+        getSigners([signerMengetahuiId, signerBendaharaId, signerPenerimaId]),
         getCurrentUser(),
         getFirstNoteSignedUrl(transaction)
     ]);
 
     const signerMengetahui = signers.find((item) => item.id === signerMengetahuiId);
     const signerBendahara = signers.find((item) => item.id === signerBendaharaId);
+    let signerPenerima = signers.find((item) => item.id === signerPenerimaId);
+
+    if (!signerPenerima && transaction.penerima_name_manual) {
+        signerPenerima = {
+            full_name: transaction.penerima_name_manual,
+            position_title: transaction.penerima_title_manual,
+            identity_type: transaction.penerima_identity_type_manual,
+            identity_number: transaction.penerima_identity_number_manual
+        };
+    }
 
     if (!signerMengetahui) {
         throw new Error('Penandatangan mengetahui/menerima tidak ditemukan.');
@@ -84,18 +96,26 @@ export async function generateBend26Pdf({
         throw new Error('Penandatangan bendahara tidak ditemukan.');
     }
 
+    if (!signerPenerima) {
+        throw new Error('Penerima transaksi (Yang Menerima) belum ditentukan saat transaksi dibuat.');
+    }
+
     const payload = {
         proofNumber: transaction.proof_number,
         organizationName: organization.name,
         receivedFrom: organization.name,
         amountNumber: Number(transaction.amount || 0),
         amountWords: terbilangRupiah(transaction.amount),
-        paymentFor: transaction.description,
+        paymentFor: transaction.notes
+            ? `${transaction.description}\n(Catatan: ${transaction.notes})`
+            : transaction.description,
+        notes: transaction.notes || '',
         transactionDate: transaction.transaction_date,
         city: organization.city || 'Kulon Progo',
         noteImageUrl,
         signerMengetahui: mapSignerForGas(signerMengetahui),
-        signerBendahara: mapSignerForGas(signerBendahara)
+        signerBendahara: mapSignerForGas(signerBendahara),
+        signerPenerima: mapSignerForGas(signerPenerima)
     };
 
     const result = await callGasPdfGenerator('generate_bend26', payload);
@@ -111,6 +131,9 @@ export async function generateBend26Pdf({
         driveFileId: result.fileId || null,
         signerMengetahuiId,
         signerBendaharaId,
+        signerPenerimaId,
+        signerPenerimaNameManual: transaction.penerima_name_manual || null,
+        signerPenerimaTitleManual: transaction.penerima_title_manual || null,
         userId: currentUser.id
     });
 }
@@ -404,6 +427,9 @@ async function saveGeneratedDocument({
     driveFileId,
     signerMengetahuiId,
     signerBendaharaId,
+    signerPenerimaId,
+    signerPenerimaNameManual,
+    signerPenerimaTitleManual,
     userId
 }) {
     const { data, error } = await supabase
@@ -419,6 +445,9 @@ async function saveGeneratedDocument({
             drive_file_id: driveFileId,
             signer_mengetahui_id: signerMengetahuiId,
             signer_bendahara_id: signerBendaharaId,
+            signer_penerima_id: signerPenerimaId,
+            signer_penerima_name_manual: signerPenerimaNameManual,
+            signer_penerima_title_manual: signerPenerimaTitleManual,
             generated_by: userId
         })
         .select(`

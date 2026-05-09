@@ -173,6 +173,15 @@ export function renderMasterDataPage({ profile }) {
         </div>
 
         <form id="signatory-form" class="master-signatory-form">
+          <div class="form-group form-group-wide">
+            <label for="signer-position">Posisi di Dokumen</label>
+            <select class="form-control" id="signer-position" name="signer_position">
+              <option value="mengetahui_menerima">Mengetahui / Menerima</option>
+              <option value="bendahara_pengeluaran_pembantu">Bendahara Pengeluaran Pembantu</option>
+              <option value="penerima">Yang Menerima</option>
+            </select>
+          </div>
+
           <div class="form-group">
             <label for="signatory-name">Nama Lengkap & Gelar</label>
             <input
@@ -191,7 +200,6 @@ export function renderMasterDataPage({ profile }) {
               id="signatory-title"
               name="position_title"
               placeholder="Contoh: Bendahara"
-              required
             />
           </div>
 
@@ -214,14 +222,6 @@ export function renderMasterDataPage({ profile }) {
               name="identity_number"
               placeholder="Boleh dikosongkan"
             />
-          </div>
-
-          <div class="form-group form-group-wide">
-            <label for="signer-position">Posisi di Dokumen</label>
-            <select class="form-control" id="signer-position" name="signer_position">
-              <option value="mengetahui_menerima">Mengetahui / Menerima</option>
-              <option value="bendahara_pengeluaran_pembantu">Bendahara Pengeluaran Pembantu</option>
-            </select>
           </div>
 
           <label class="checkbox-line">
@@ -292,6 +292,10 @@ export function renderMasterDataPage({ profile }) {
 
     page.querySelector('#cancel-signatory-btn')?.addEventListener('click', () => {
       resetSignatoryForm();
+    });
+
+    page.querySelector('#signer-position')?.addEventListener('change', (e) => {
+      updateSignatoryTitleLabel(e.target.value);
     });
 
     page.addEventListener('click', async (event) => {
@@ -625,7 +629,7 @@ export function renderMasterDataPage({ profile }) {
       return;
     }
 
-    if (!String(payload.position_title || '').trim()) {
+    if (!String(payload.position_title || '').trim() && payload.signer_position !== 'penerima') {
       setMessage('Jabatan penandatangan wajib diisi.', 'error');
       return;
     }
@@ -727,6 +731,7 @@ export function renderMasterDataPage({ profile }) {
 
     page.querySelector('#save-signatory-btn').textContent = 'Simpan Perubahan';
     page.querySelector('#cancel-signatory-btn').classList.remove('is-hidden');
+    updateSignatoryTitleLabel(signatory.signer_position);
     page.querySelector('#signatory-name')?.focus();
   }
 
@@ -739,6 +744,21 @@ export function renderMasterDataPage({ profile }) {
     page.querySelector('#is-default-signer').checked = false;
     page.querySelector('#save-signatory-btn').textContent = 'Tambah Penandatangan';
     page.querySelector('#cancel-signatory-btn').classList.add('is-hidden');
+    updateSignatoryTitleLabel('mengetahui_menerima');
+  }
+
+  function updateSignatoryTitleLabel(position) {
+    const label = page.querySelector('label[for="signatory-title"]');
+    const input = page.querySelector('#signatory-title');
+    if (!label || !input) return;
+
+    if (position === 'penerima') {
+      label.textContent = 'Instansi atau Jabatan';
+      input.placeholder = 'Contoh: Toko Makmur / Pemilik';
+    } else {
+      label.textContent = 'Jabatan';
+      input.placeholder = 'Contoh: Bendahara';
+    }
   }
 
   function renderCategories() {
@@ -920,6 +940,9 @@ function formatSignerPosition(value) {
   if (value === 'mengetahui_menerima') return 'Mengetahui / Menerima';
   if (value === 'bendahara_pengeluaran_pembantu') {
     return 'Bendahara Pengeluaran Pembantu';
+  }
+  if (value === 'penerima') {
+    return 'Yang Menerima';
   }
 
   return value || '-';

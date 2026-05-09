@@ -643,14 +643,14 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
           <div class="form-group">
             <label for="signer-mengetahui">Mengetahui / Menerima</label>
             <select class="form-control" id="signer-mengetahui">
-              ${renderSignerOptions(mengetahuiDefaultId)}
+              ${renderSignerOptions(mengetahuiDefaultId, 'mengetahui_menerima')}
             </select>
           </div>
 
           <div class="form-group">
             <label for="signer-bendahara">Bendahara Pengeluaran Pembantu</label>
             <select class="form-control" id="signer-bendahara">
-              ${renderSignerOptions(bendaharaDefaultId)}
+              ${renderSignerOptions(bendaharaDefaultId, 'bendahara_pengeluaran_pembantu')}
             </select>
           </div>
 
@@ -706,8 +706,9 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
     return defaultSigner?.id || byPosition[0]?.id || state.signatories[0]?.id || '';
   }
 
-  function renderSignerOptions(selectedId) {
+  function renderSignerOptions(selectedId, position) {
     return state.signatories
+      .filter((signer) => !position || signer.signer_position === position)
       .map((signer) => {
         const selected = signer.id === selectedId ? 'selected' : '';
 
@@ -725,7 +726,9 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       ? ` • ${signer.identity_type || 'ID'}: ${signer.identity_number}`
       : '';
 
-    return `${signer.full_name} — ${signer.position_title}${identity}`;
+    const positionTitle = signer.position_title ? ` — ${signer.position_title}` : '';
+
+    return `${signer.full_name}${positionTitle}${identity}`;
   }
 
   async function handleUploadNote() {

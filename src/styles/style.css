@@ -299,11 +299,14 @@ img {
     border: 1px solid var(--gray-300);
     background: var(--surface);
     color: var(--text-main);
-    outline: none;
-    transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease,
-        background 0.15s ease;
+
+    * {
+        outline: none;
+    }
+
+    transition: border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
 textarea.form-control {
@@ -4294,6 +4297,8 @@ button,
         justify-content: flex-end;
     }
 }
+
+* {
     outline: none;
 }
 
@@ -4341,6 +4346,7 @@ textarea,
         margin: 2px 0 10px 0 !important;
         background: linear-gradient(135deg, #102a6b, #1e40af, #3b82f6);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
         display: block;
     }
@@ -4404,6 +4410,7 @@ textarea,
     border: none !important;
     box-shadow: 0 4px 10px rgba(153, 27, 27, 0.2) !important;
 }
+
 /* Dashboard Header Layout Enhancements */
 .description-with-pill {
     display: flex;
@@ -4456,8 +4463,15 @@ textarea,
 }
 
 @keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .pwa-gate-icon img {
@@ -4499,7 +4513,9 @@ textarea,
     color: #334155;
 }
 
-.pwa-step:last-child { margin-bottom: 0; }
+.pwa-step:last-child {
+    margin-bottom: 0;
+}
 
 .step-number {
     background: #1d4ed8;
@@ -4562,4 +4578,3 @@ body {
     /* Menghilangkan kotak abu-abu saat menyentuh tombol di mobile */
     -webkit-tap-highlight-color: transparent;
 }
-

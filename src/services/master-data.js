@@ -188,8 +188,8 @@ export async function createSignatory(payload) {
         .insert({
             organization_id: organizationId,
             full_name: cleanText(payload.full_name),
-            position_title: cleanText(payload.position_title),
-            identity_type: cleanText(payload.identity_type) || 'NIP/NIK',
+            position_title: cleanText(payload.position_title) || null,
+            identity_type: cleanText(payload.identity_type) || null,
             identity_number: cleanText(payload.identity_number) || null,
             signer_position: payload.signer_position,
             is_default: false,
@@ -219,8 +219,8 @@ export async function updateSignatory(signatoryId, payload) {
         .from('signatories')
         .update({
             full_name: cleanText(payload.full_name),
-            position_title: cleanText(payload.position_title),
-            identity_type: cleanText(payload.identity_type) || 'NIP/NIK',
+            position_title: cleanText(payload.position_title) || null,
+            identity_type: cleanText(payload.identity_type) || null,
             identity_number: cleanText(payload.identity_number) || null,
             signer_position: payload.signer_position,
             is_default: false,

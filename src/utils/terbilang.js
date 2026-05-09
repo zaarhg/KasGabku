@@ -24,7 +24,13 @@ export function terbilangRupiah(value) {
         return 'nol rupiah';
     }
 
-    return `${numberToWords(number)} rupiah`.replace(/\s+/g, ' ').trim();
+    return toTitleCase(`${numberToWords(number)} rupiah`).replace(/\s+/g, ' ').trim();
+}
+
+function toTitleCase(str) {
+    return str.replace(/\w\S*/g, (txt) => {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
 }
 
 function numberToWords(number) {
