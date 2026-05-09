@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { logActivity } from './activity-log.js';
 
 export async function getSession() {
     const { data, error } = await supabase.auth.getSession();
@@ -20,10 +21,29 @@ export async function signIn(email, password) {
         throw error;
     }
 
+    // Catat log login
+    await logActivity({
+        action: 'login',
+        description: `Pengguna ${email} masuk ke sistem.`
+    });
+
     return data;
 }
 
 export async function signOut() {
+    try {
+        const user = await getCurrentUser();
+        if (user) {
+            // Catat log logout sebelum sesi dihapus
+            await logActivity({
+                action: 'logout',
+                description: `Pengguna ${user.email} keluar dari sistem.`
+            });
+        }
+    } catch (e) {
+        // Abaikan jika gagal ambil user saat logout
+    }
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {
