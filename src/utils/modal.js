@@ -8,7 +8,8 @@ export function showConfirmModal({
     message = 'Apakah kamu yakin?',
     confirmText = 'Ya, lanjutkan',
     cancelText = 'Batal',
-    tone = 'primary'
+    tone = 'primary',
+    cancelTone = 'light'
 } = {}) {
     return new Promise((resolve) => {
         closeActiveModal();
@@ -19,7 +20,7 @@ export function showConfirmModal({
             tone,
             bodyHtml: '',
             footerHtml: `
-        <button class="btn btn-light" type="button" data-modal-cancel>
+        <button class="btn ${getButtonClass(cancelTone)}" type="button" data-modal-cancel>
           ${escapeHtml(cancelText)}
         </button>
         <button class="btn ${getButtonClass(tone)}" type="button" data-modal-confirm>
@@ -56,6 +57,7 @@ export function showPromptModal({
     confirmText = 'Simpan',
     cancelText = 'Batal',
     tone = 'primary',
+    cancelTone = 'light',
     required = false
 } = {}) {
     return new Promise((resolve) => {
@@ -80,7 +82,7 @@ export function showPromptModal({
         </div>
       `,
             footerHtml: `
-        <button class="btn btn-light" type="button" data-modal-cancel>
+        <button class="btn ${getButtonClass(cancelTone)}" type="button" data-modal-cancel>
           ${escapeHtml(cancelText)}
         </button>
         <button class="btn ${getButtonClass(tone)}" type="button" data-modal-confirm>
@@ -339,6 +341,8 @@ function unlockPage() {
 function getButtonClass(tone) {
     if (tone === 'danger') return 'btn-danger';
     if (tone === 'warning') return 'btn-warning';
+    if (tone === 'secondary') return 'btn-secondary';
+    if (tone === 'light') return 'btn-light';
     return 'btn-primary';
 }
 

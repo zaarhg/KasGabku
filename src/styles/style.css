@@ -1,3 +1,70 @@
+.collapsible-toolbar {
+    transition: all 0.3s ease;
+}
+.collapsible-toolbar.is-collapsed {
+    display: none;
+}
+.welcome-glass-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(16, 42, 107, 0.05);
+}
+
+.welcome-text-large {
+    font-size: 16px;
+    color: var(--text-soft);
+}
+
+.welcome-text-large strong {
+    color: var(--blue-900);
+    font-weight: 800;
+}
+
+.welcome-role-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-role-label {
+    font-size: 12.5px;
+    color: var(--text-soft);
+}
+
+.welcome-role-capsule {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    white-space: nowrap;
+}
+
+.welcome-role-capsule.admin {
+    background: var(--danger-100);
+    color: var(--danger-800);
+}
+.welcome-role-capsule.bendahara {
+    background: var(--warning-100);
+    color: var(--warning-800);
+}
+.welcome-role-capsule.viewer {
+    background: var(--gray-100);
+    color: var(--text-muted);
+}
+
 :root {
     --blue-900: #102a6b;
     --blue-800: #16398a;
@@ -1017,8 +1084,11 @@ textarea.form-control {
     position: fixed;
     inset: 0;
     z-index: 9999;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+
     padding: 18px;
     background: rgba(15, 23, 42, 0.48);
     backdrop-filter: blur(8px);
@@ -1030,6 +1100,7 @@ textarea.form-control {
 }
 
 .modal-card {
+    margin: auto;
     width: min(100%, 460px);
     display: grid;
     grid-template-columns: 54px 1fr;
@@ -2008,6 +2079,42 @@ textarea.form-control {
     margin-bottom: 0;
 }
 
+.dashboard-welcome {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(16, 42, 107, 0.05);
+}
+
+.welcome-text-large {
+    font-size: 16px;
+    color: var(--text-soft);
+}
+
+.welcome-text-large strong {
+    color: var(--blue-900);
+    font-weight: 800;
+}
+
+.welcome-role-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-role-label {
+    font-size: 12.5px;
+    color: var(--text-soft);
+}
 .dashboard-header-actions {
     display: flex;
     align-items: center;
@@ -2031,8 +2138,9 @@ textarea.form-control {
 
 .dashboard-hero-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(420px, 0.9fr);
-    gap: 18px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
 }
 
 .dashboard-balance-card {
@@ -2076,9 +2184,10 @@ textarea.form-control {
 }
 
 .dashboard-balance-footer {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 12px;
+    width: 100%;
 }
 
 .dashboard-balance-footer>div {
@@ -2090,7 +2199,7 @@ textarea.form-control {
 
 .dashboard-balance-footer span {
     display: block;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--white) !important;
     font-size: 12px;
     font-weight: 850;
     margin-bottom: 5px;
@@ -2098,9 +2207,15 @@ textarea.form-control {
 
 .dashboard-balance-footer strong {
     display: block;
-    color: var(--white);
+    color: var(--white) !important;
     font-size: 15px;
     font-weight: 950;
+}
+
+/* Unified white color for all footer stats */
+.dashboard-balance-footer .amount-income,
+.dashboard-balance-footer .amount-expense {
+    color: var(--white) !important;
 }
 
 .dashboard-metric-grid {
@@ -2156,46 +2271,71 @@ textarea.form-control {
     gap: 12px;
 }
 
+.admin-action-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 22px;
+}
+
 .dashboard-action-item {
-    display: grid;
-    gap: 6px;
-    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 16px;
+    border: 1px solid #e2e8f0;
     border-radius: 20px;
-    background: var(--surface-soft);
-    padding: 14px;
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease,
-        transform 0.15s ease;
+    background: var(--white);
+    padding: 14px 14px 14px 12px;
+    box-shadow: 0 4px 10px rgba(16, 42, 107, 0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    min-height: 92px;
+}
+
+.action-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .dashboard-action-item:hover {
-    background: var(--surface-blue);
-    border-color: #bfdbfe;
-    transform: translateY(-1px);
+    border-color: var(--blue-500);
+    background: #f8fbff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(16, 42, 107, 0.1);
+}
+
+.dashboard-action-item:active {
+    transform: scale(0.97);
 }
 
 .dashboard-action-item span {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     display: grid;
     place-items: center;
-    border-radius: 14px;
-    background: var(--surface-blue);
-    color: var(--blue-700);
-    font-size: 18px;
-    font-weight: 950;
+    border-radius: 12px;
+    background: var(--blue-600) !important;
+    color: #ffffff !important;
+    font-size: 20px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
 }
 
 .dashboard-action-item strong {
     color: var(--text-heading);
-    font-size: 14px;
+    font-size: 13.5px;
+    font-weight: 900;
+    line-height: 1.25;
+    margin-bottom: 2px;
 }
 
 .dashboard-action-item small {
     color: var(--text-soft);
-    font-size: 12px;
-    line-height: 1.45;
+    font-size: 11.5px;
+    line-height: 1.4;
+    max-width: 140px;
 }
 
 .table-main-link {
@@ -2228,10 +2368,20 @@ textarea.form-control {
         padding: 20px;
     }
 
-    .dashboard-balance-footer,
     .dashboard-metric-grid,
-    .dashboard-action-grid {
+    .dashboard-action-grid:not(.admin-action-grid) {
         grid-template-columns: 1fr;
+    }
+
+    .admin-action-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Balance footer stays 2x2 as long as possible */
+    .dashboard-balance-footer {
+        grid-template-columns: 1fr 1fr !important;
     }
 }
 
@@ -3674,31 +3824,6 @@ textarea.form-control {
 ========================================================= */
 
 @media (max-width: 720px) {
-    .dashboard-page .dashboard-action-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-
-    .dashboard-page .dashboard-action-item {
-        min-height: 116px;
-        padding: 12px;
-    }
-
-    .dashboard-page .dashboard-action-item span {
-        width: 34px;
-        height: 34px;
-        border-radius: 12px;
-        font-size: 16px;
-    }
-
-    .dashboard-page .dashboard-action-item strong {
-        font-size: 13px;
-    }
-
-    .dashboard-page .dashboard-action-item small {
-        font-size: 11px;
-        line-height: 1.35;
-    }
 
     .mobile-nav {
         grid-auto-flow: column;
@@ -4062,16 +4187,6 @@ button,
     }
 }
 
-/* Custom Admin Action Grid Layout */
-.admin-action-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-}
-
-@media (max-width: 720px) {
-    .admin-action-grid {
-        grid-template-columns: 1fr !important;
-    }
-}
 
 /* Role Pill Colors on Dashboard */
 .dashboard-role-pill.role-admin {
@@ -4188,44 +4303,6 @@ button,
 
 
 /* Dashboard Action Colors */
-.dashboard-action-item.action-blue {
-    background: #eff6ff !important;
-    border-color: #dbeafe !important;
-}
-
-.dashboard-action-item.action-blue:hover {
-    background: #dbeafe !important;
-}
-
-.dashboard-action-item.action-blue span {
-    color: #2563eb !important;
-}
-
-.dashboard-action-item.action-indigo {
-    background: #f5f3ff !important;
-    border-color: #ede9fe !important;
-}
-
-.dashboard-action-item.action-indigo:hover {
-    background: #ede9fe !important;
-}
-
-.dashboard-action-item.action-indigo span {
-    color: #7c3aed !important;
-}
-
-.dashboard-action-item.action-teal {
-    background: #f0fdfa !important;
-    border-color: #ccfbf1 !important;
-}
-
-.dashboard-action-item.action-teal:hover {
-    background: #ccfbf1 !important;
-}
-
-.dashboard-action-item.action-teal span {
-    color: #0d9488 !important;
-}
 
 
 /* PWA Install Banner */
@@ -4578,3 +4655,82 @@ body {
     /* Menghilangkan kotak abu-abu saat menyentuh tombol di mobile */
     -webkit-tap-highlight-color: transparent;
 }
+
+/* Modern Welcome Section */
+.dashboard-welcome-section {
+    padding: 28px 4px 20px;
+    margin-bottom: 4px;
+}
+
+.welcome-title {
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--text-heading);
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.welcome-title strong {
+    font-weight: 850;
+    color: var(--blue-700);
+}
+
+.welcome-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.welcome-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eef2ff;
+    color: #4f46e5;
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.05);
+}
+
+.badge-dot {
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.welcome-sep {
+    width: 4px;
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 50%;
+}
+
+.welcome-subtitle {
+    font-size: 13.5px;
+    color: var(--text-soft);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+@media (max-width: 480px) {
+    .dashboard-welcome-section {
+        padding: 20px 4px 16px;
+    }
+    .welcome-title {
+        font-size: 21px;
+    }
+    .welcome-meta {
+        gap: 8px;
+    }
+}
+
+
+

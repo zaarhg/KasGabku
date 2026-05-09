@@ -31,7 +31,8 @@ export function renderBukuKasPage({ profile }) {
     year: getCurrentYear(),
     preview: null,
     signatories: [],
-    documentPage: 1
+    documentPage: 1,
+    showAllRows: false
   };
 
   page.innerHTML = `
@@ -60,10 +61,6 @@ export function renderBukuKasPage({ profile }) {
         </div>
 
         <div class="book-control-actions">
-          <button class="btn btn-light" type="button" id="refresh-book-btn">
-            Refresh Preview
-          </button>
-
           ${['admin', 'bendahara'].includes(profile?.role)
       ? `
                 <button class="btn btn-primary" type="button" id="generate-book-btn">
@@ -182,10 +179,6 @@ export function renderBukuKasPage({ profile }) {
       await loadPreview();
     });
 
-    page.querySelector('#refresh-book-btn')?.addEventListener('click', async () => {
-      await loadPreview();
-    });
-
     page.querySelector('#generate-book-btn')?.addEventListener('click', async () => {
       await handleGenerateBukuKas();
     });
@@ -201,6 +194,10 @@ export function renderBukuKasPage({ profile }) {
         await handleDeleteDocument(id);
       }
 
+      if (action === 'view-document') {
+        await handleViewDocument(id);
+      }
+
       if (action === 'doc-prev') {
         state.documentPage = Math.max(1, state.documentPage - 1);
         renderDocuments();
@@ -210,6 +207,11 @@ export function renderBukuKasPage({ profile }) {
         const totalPages = Math.ceil((state.preview.documents || []).length / 3);
         state.documentPage = Math.min(totalPages, state.documentPage + 1);
         renderDocuments();
+      }
+
+      if (action === 'show-all-rows') {
+        state.showAllRows = true;
+        renderRows();
       }
     });
   }
@@ -237,6 +239,7 @@ export function renderBukuKasPage({ profile }) {
       updatePeriodTitle();
 
       state.documentPage = 1;
+      state.showAllRows = false;
 
       state.preview = await getBukuKasPreview({
         month: state.month,
@@ -328,18 +331,42 @@ export function renderBukuKasPage({ profile }) {
           </div>
         `,
         footerHtml: `
-          <button class="btn btn-light" type="button" data-modal-close>
-            Tutup
-          </button>
           <a
             class="btn btn-primary"
             href="${escapeHtml(document.file_url || '#')}"
             target="_blank"
             rel="noopener noreferrer"
+            data-modal-close
           >
             Buka PDF
           </a>
-        `
+          <button class="btn btn-secondary" type="button" data-action="share-doc">
+            Bagikan
+          </button>
+          <button class="btn btn-light" type="button" data-modal-close>
+            Tutup
+          </button>
+        `,
+        onMount: (modal) => {
+          modal.querySelector('[data-action="share-doc"]')?.addEventListener('click', () => {
+            const shareTitle = `Buku Kas Gabugan Bridge Kulon Progo Bulanan ${state.preview.periodLabel}`;
+            const shareUrl = document.file_url;
+            const fullMessage = `${shareTitle}\n\n${shareUrl}`;
+
+            if (navigator.share) {
+              navigator.share({
+                title: shareTitle,
+                text: fullMessage
+              }).catch(() => {
+                // Fallback if combined share fails
+                navigator.share({ title: shareTitle, url: shareUrl });
+              });
+            } else {
+              navigator.clipboard.writeText(fullMessage);
+              alert('Link dan keterangan berhasil disalin.');
+            }
+          });
+        }
       });
     } catch (error) {
       if (loadingModal) {
@@ -377,6 +404,7 @@ export function renderBukuKasPage({ profile }) {
     const defaultId = getDefaultSignerId();
 
     input.innerHTML = state.signatories
+      .filter(signer => signer.signer_position !== 'penerima')
       .map((signer) => {
         const selected = signer.id === defaultId ? 'selected' : '';
 
@@ -478,18 +506,18 @@ export function renderBukuKasPage({ profile }) {
           const isAdmin = profile?.role === 'admin';
           return `
               <div class="document-list-row">
-                <a
+                <button
                   class="document-item"
-                  href="${escapeHtml(document.file_url || '#')}"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  type="button"
+                  data-action="view-document"
+                  data-id="${document.id}"
                 >
                   <span class="attachment-icon">📄</span>
                   <span>
                     <strong>${escapeHtml(document.file_name || 'Buku Kas.pdf')}</strong>
                     <small>${document.generated_at ? formatDateTime(document.generated_at) : '-'}</small>
                   </span>
-                </a>
+                </button>
                 ${isAdmin ? `
                   <button class="btn btn-small btn-danger" type="button" data-action="delete-document" data-id="${document.id}" title="Hapus PDF">
                     Hapus
@@ -515,6 +543,64 @@ export function renderBukuKasPage({ profile }) {
         </div>
       ` : ''}
     `;
+  }
+
+  async function handleViewDocument(documentId) {
+    const document = (state.preview.documents || []).find((d) => d.id === documentId);
+    if (!document) return;
+
+    await showContentModal({
+      title: 'Detail Dokumen',
+      message: 'Lihat ringkasan dokumen atau buka file PDF selengkapnya.',
+      tone: 'primary',
+      bodyHtml: `
+        <div class="success-doc-box">
+          <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.8;">📄</div>
+          <strong>${escapeHtml(document.file_name || 'Buku Kas.pdf')}</strong>
+          <p style="margin-top: 8px; font-size: 13px; color: var(--text-soft);">
+            Dibuat pada ${document.generated_at ? formatDateTime(document.generated_at) : '-'}<br>
+            Tersimpan di Google Drive
+          </p>
+        </div>
+      `,
+      footerHtml: `
+        <a
+          class="btn btn-primary"
+          href="${escapeHtml(document.file_url || '#')}"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-modal-close
+        >
+          Buka PDF
+        </a>
+        <button class="btn btn-secondary" type="button" data-action="share-doc">
+          Bagikan
+        </button>
+        <button class="btn btn-light" type="button" data-modal-close>
+          Tutup
+        </button>
+      `,
+      onMount: (modal) => {
+        modal.querySelector('[data-action="share-doc"]')?.addEventListener('click', () => {
+          const shareTitle = `Buku Kas Gabugan Bridge Kulon Progo Bulanan ${state.preview.periodLabel}`;
+          const shareUrl = document.file_url;
+          const fullMessage = `${shareTitle}\n\n${shareUrl}`;
+
+          if (navigator.share) {
+            navigator.share({
+              title: shareTitle,
+              text: fullMessage
+            }).catch(() => {
+              // Fallback
+              navigator.share({ title: shareTitle, url: shareUrl });
+            });
+          } else {
+            navigator.clipboard.writeText(fullMessage);
+            alert('Link dan keterangan berhasil disalin.');
+          }
+        });
+      }
+    });
   }
 
   async function handleDeleteDocument(documentId) {
@@ -577,7 +663,9 @@ export function renderBukuKasPage({ profile }) {
       return;
     }
 
-    body.innerHTML = rows
+    const rowsToDisplay = state.showAllRows ? rows : rows.slice(0, 5);
+
+    body.innerHTML = rowsToDisplay
       .map((row) => {
         return `
           <tr>
@@ -602,6 +690,18 @@ export function renderBukuKasPage({ profile }) {
         `;
       })
       .join('');
+
+    if (!state.showAllRows && rows.length > 5) {
+      body.innerHTML += `
+        <tr>
+          <td colspan="9" class="text-center" style="padding: 20px;">
+            <button class="btn btn-light" type="button" data-action="show-all-rows">
+              <span>👇</span> Lihat Seluruh Preview (${rows.length} Baris)
+            </button>
+          </td>
+        </tr>
+      `;
+    }
   }
 
   function renderNoteStatus(noteStatus) {

@@ -193,6 +193,40 @@ export async function createTransaction(payload) {
     return data;
 }
 
+export async function updateTransaction(transactionId, payload) {
+    const { data: userResult } = await supabase.auth.getUser();
+    const user = userResult.user;
+
+    if (!user) {
+        throw new Error('User belum login.');
+    }
+
+    const { data, error } = await supabase
+        .from('transactions')
+        .update({
+            ...payload,
+            updated_by: user.id,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', transactionId)
+        .select()
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    await logActivity({
+        action: 'update_transaction',
+        entityTable: 'transactions',
+        entityId: transactionId,
+        description: `Transaksi diperbarui: ${data.description}`
+    });
+
+    return data;
+}
+
+
 export async function finalizeTransaction(transactionId) {
     const { data, error } = await supabase.rpc('finalize_transaction', {
         p_transaction_id: transactionId

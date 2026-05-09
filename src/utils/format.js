@@ -93,3 +93,10 @@ export function escapeHtml(value) {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
 }
+
+export function parseRupiah(value) {
+    if (typeof value === 'number') return value;
+    const raw = String(value || '')
+        .replace(/[^\d]/g, '');
+    return Number(raw) || 0;
+}

@@ -8,6 +8,7 @@ import { renderMasterDataPage } from './pages/master-data.js';
 import { renderAdminUserPage } from './pages/admin-user.js';
 import { renderLogAktivitasPage } from './pages/log-aktivitas.js';
 import { renderBackupPage } from './pages/backup.js';
+import { renderTambahTransaksiPage } from './pages/tambah-transaksi.js';
 
 const appState = {
   session: null,
@@ -22,6 +23,12 @@ const routes = [
     label: 'Beranda',
     icon: '⌂',
     roles: ['admin', 'bendahara', 'viewer']
+  },
+  {
+    key: 'tambah-transaksi',
+    label: 'Tambah Kas',
+    icon: '+',
+    roles: ['admin', 'bendahara']
   },
   {
     key: 'transaksi',
@@ -39,7 +46,8 @@ const routes = [
     key: 'master-data',
     label: 'Master Data',
     icon: '⚙',
-    roles: ['admin']
+    roles: ['admin'],
+    hiddenInSidebar: true
   },
   {
     key: 'admin',
@@ -299,6 +307,12 @@ function renderPage(route) {
     });
   }
 
+  if (route === 'tambah-transaksi') {
+    return renderTambahTransaksiPage({
+      profile: appState.profile
+    });
+  }
+
   if (route === 'buku-kas') {
     return renderBukuKasPage({
       profile: appState.profile
@@ -383,6 +397,7 @@ function renderSidebar(accessibleRoutes, activeMenuKey) {
 
       <nav class="sidebar-nav">
         ${accessibleRoutes
+      .filter(route => !route.hiddenInSidebar)
       .map((route) => {
         const active = route.key === activeMenuKey ? 'is-active' : '';
 
@@ -434,7 +449,9 @@ function renderMobileTopbar() {
 }
 
 function renderMobileNav(accessibleRoutes, activeMenuKey) {
-  const visibleRoutes = accessibleRoutes.slice(0, 4);
+  const visibleRoutes = accessibleRoutes
+    .filter(route => !route.hiddenInSidebar)
+    .slice(0, 4);
 
   return `
     <nav class="mobile-nav">

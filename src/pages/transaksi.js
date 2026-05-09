@@ -5,8 +5,7 @@ import {
 } from '../services/transaksi.js';
 
 import {
-  getMasterData,
-  createSignatory
+  getMasterData
 } from '../services/master-data.js';
 
 import {
@@ -60,118 +59,18 @@ export function renderTransaksiPage({ profile }) {
         </p>
       </div>
 
-      ${canCreateTransaction(profile)
-      ? `
-            <button class="btn btn-primary" type="button" id="show-form-btn">
-              + Tambah Transaksi
-            </button>
-          `
-      : ''
-    }
+      <div class="header-actions">
+        <button class="btn btn-primary" type="button" id="toggle-filters-btn">
+          Opsi Filter
+        </button>
+      </div>
     </div>
 
     <div class="message-box is-hidden" id="message-box"></div>
 
-    <section class="transaction-form-card is-hidden" id="transaction-form-card">
-      <div class="section-heading">
-        <div>
-          <h2>Tambah Transaksi Draft</h2>
-          <p>Setelah disimpan, buka halaman detail untuk cek dan finalisasi.</p>
-        </div>
-        <button class="btn btn-light" type="button" id="hide-form-btn">
-          Tutup
-        </button>
-      </div>
 
-      <form id="transaction-form" class="transaction-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="transaction_date">Tanggal</label>
-            <input
-              class="form-control"
-              id="transaction_date"
-              name="transaction_date"
-              type="date"
-              value="${getTodayInputDate()}"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="type">Tipe</label>
-            <select class="form-control" id="type" name="type" required>
-              <option value="masuk">Kas Masuk</option>
-              <option value="keluar">Kas Keluar</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="category_id">Jenis / Kategori</label>
-            <select class="form-control" id="category_id" name="category_id">
-              <option value="">Memuat kategori...</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="amount">Nominal</label>
-            <input
-              class="form-control"
-              id="amount"
-              name="amount"
-              type="text"
-              inputmode="numeric"
-              placeholder="Contoh: 150000"
-              required
-            />
-          </div>
-
-          <div class="form-group form-group-wide">
-            <label for="description">Uraian</label>
-            <input
-              class="form-control"
-              id="description"
-              name="description"
-              type="text"
-              placeholder="Contoh: Konsumsi rapat pengurus"
-              required
-            />
-          </div>
-
-          <div class="form-group form-group-wide" id="party-field-container">
-            <label for="party_name">Penerima / Sumber Dana</label>
-            <input
-              class="form-control"
-              id="party_name"
-              name="party_name"
-              type="text"
-              placeholder="Contoh: Toko Makmur / Iuran anggota"
-            />
-          </div>
-
-          <div class="form-group form-group-wide">
-            <label for="notes">Catatan</label>
-            <textarea
-              class="form-control"
-              id="notes"
-              name="notes"
-              rows="3"
-              placeholder="Opsional"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit" id="save-transaction-btn">
-            Simpan Draft
-          </button>
-          <button class="btn btn-light" type="button" id="reset-form-btn">
-            Reset
-          </button>
-        </div>
-      </form>
-    </section>
-
-    <section class="toolbar-card">
+    <div class="collapsible-toolbar is-collapsed" id="filters-collapsible">
+      <section class="toolbar-card">
       <div class="filters-grid">
         <div class="form-group">
           <label for="filter-month">Bulan</label>
@@ -207,6 +106,7 @@ export function renderTransaksiPage({ profile }) {
         </div>
       </div>
     </section>
+    </div>
 
     <section class="summary-grid" id="summary-grid"></section>
 
@@ -216,9 +116,6 @@ export function renderTransaksiPage({ profile }) {
           <h2>Daftar Transaksi</h2>
           <p id="table-caption">Memuat data transaksi...</p>
         </div>
-        <button class="btn btn-light" type="button" id="refresh-btn">
-          Refresh
-        </button>
       </div>
 
       <div class="table-responsive">
@@ -253,37 +150,15 @@ export function renderTransaksiPage({ profile }) {
   return page;
 
   function bindEvents() {
-    const showFormBtn = page.querySelector('#show-form-btn');
-    const hideFormBtn = page.querySelector('#hide-form-btn');
-    const resetFormBtn = page.querySelector('#reset-form-btn');
-    const formCard = page.querySelector('#transaction-form-card');
-    const form = page.querySelector('#transaction-form');
-    const typeInput = page.querySelector('#type');
-
-    showFormBtn?.addEventListener('click', () => {
-      formCard.classList.remove('is-hidden');
-    });
-
-    hideFormBtn?.addEventListener('click', () => {
-      formCard.classList.add('is-hidden');
-    });
-
-    resetFormBtn?.addEventListener('click', () => {
-      resetForm();
-    });
-
-    typeInput?.addEventListener('change', () => {
-      renderCategoryOptions(typeInput.value);
-      renderPartyField(typeInput.value);
-    });
-
-    form?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      await handleCreateTransaction(form);
-    });
-
-    page.querySelector('#refresh-btn')?.addEventListener('click', async () => {
-      await loadTransactions();
+    page.querySelector('#toggle-filters-btn')?.addEventListener('click', () => {
+      const collapsible = page.querySelector('#filters-collapsible');
+      const btn = page.querySelector('#toggle-filters-btn');
+      
+      if (collapsible) {
+        collapsible.classList.toggle('is-collapsed');
+        const isOpen = !collapsible.classList.contains('is-collapsed');
+        btn.textContent = isOpen ? 'Tutup Filter' : 'Opsi Filter';
+      }
     });
 
     ['filter-month', 'filter-year', 'filter-type', 'filter-status'].forEach((id) => {
@@ -322,9 +197,6 @@ export function renderTransaksiPage({ profile }) {
       state.categories = masterData.categories;
       state.signatories = masterData.signatories;
 
-      renderCategoryOptions(page.querySelector('#type')?.value || 'masuk');
-      renderPartyField(page.querySelector('#type')?.value || 'masuk');
-
       await loadTransactions();
 
       hideMessage();
@@ -351,279 +223,6 @@ export function renderTransaksiPage({ profile }) {
       setMessage(error.message || String(error), 'error');
       renderEmptyTable('Gagal memuat transaksi.');
     }
-  }
-
-  async function handleCreateTransaction(form) {
-    const submitButton = page.querySelector('#save-transaction-btn');
-    const formData = new FormData(form);
-
-    const amount = parseAmountInput(formData.get('amount'));
-
-    if (!amount) {
-      setMessage('Nominal harus lebih dari 0.', 'error');
-      return;
-    }
-
-    const payload = {
-      transaction_date: formData.get('transaction_date'),
-      type: formData.get('type'),
-      category_id: formData.get('category_id'),
-      description: String(formData.get('description') || '').trim(),
-      amount,
-      notes: String(formData.get('notes') || '').trim(),
-      signer_penerima_id: formData.get('signer_penerima_id') === 'temp_manual' ? null : formData.get('signer_penerima_id'),
-      penerima_name_manual: formData.get('penerima_name_manual') || null,
-      penerima_title_manual: formData.get('penerima_title_manual') || null,
-      penerima_identity_type_manual: formData.get('penerima_identity_type_manual') || null,
-      penerima_identity_number_manual: formData.get('penerima_identity_number_manual') || null
-    };
-
-    if (payload.type === 'masuk') {
-      payload.party_name = String(formData.get('party_name') || '').trim();
-    } else {
-      const signerId = formData.get('signer_penerima_id');
-      if (signerId === 'temp_manual') {
-        payload.party_name = formData.get('penerima_name_manual');
-      } else if (signerId) {
-        const signer = state.signatories.find((s) => s.id === signerId);
-        payload.party_name = signer?.full_name || '';
-      }
-    }
-
-    if (!payload.description) {
-      setMessage('Uraian wajib diisi.', 'error');
-      return;
-    }
-
-    try {
-      submitButton.disabled = true;
-      submitButton.textContent = 'Menyimpan...';
-
-      await createTransaction(payload);
-
-      setMessage('Transaksi berhasil disimpan sebagai draft.', 'success');
-      resetForm();
-      page.querySelector('#transaction-form-card')?.classList.add('is-hidden');
-
-      await loadTransactions();
-    } catch (error) {
-      setMessage(error.message || String(error), 'error');
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = 'Simpan Draft';
-    }
-  }
-
-  async function handleViewNotes(transactionId) {
-    const transaction = getTransactionById(transactionId);
-
-    if (!transaction) {
-      setMessage('Transaksi tidak ditemukan.', 'error');
-      return;
-    }
-
-    const attachments = transaction.transaction_attachments || [];
-
-    if (!attachments.length) {
-      setMessage('Transaksi ini belum memiliki nota.', 'info');
-      return;
-    }
-
-    try {
-      setMessage('Membuka nota...', 'info');
-
-      const notes = await getSignedUrlsForAttachments(attachments);
-
-      hideMessage();
-
-      await showContentModal({
-        title: 'Foto Nota',
-        message: `${transaction.proof_number || 'Transaksi draft'} — ${transaction.description}`,
-        tone: 'primary',
-        bodyHtml: renderNotesPreview(notes),
-        footerHtml: `
-          <button class="btn btn-primary" type="button" data-modal-close>
-            Tutup
-          </button>
-        `
-      });
-    } catch (error) {
-      setMessage(error.message || String(error), 'error');
-    }
-  }
-
-  function renderCategoryOptions(type) {
-    const categoryInput = page.querySelector('#category_id');
-    if (!categoryInput) return;
-
-    const filteredCategories = state.categories.filter((category) => {
-      return !category.applies_to || category.applies_to === type;
-    });
-
-    categoryInput.innerHTML = `
-      <option value="">Tanpa kategori</option>
-      ${filteredCategories
-        .map((category) => {
-          return `
-            <option value="${category.id}">
-              ${escapeHtml(category.name)}
-            </option>
-          `;
-        })
-        .join('')}
-    `;
-  }
-
-  function renderPartyField(type) {
-    const container = page.querySelector('#party-field-container');
-    if (!container) return;
-
-    if (type === 'masuk') {
-      container.innerHTML = `
-        <label for="party_name">Sumber Dana</label>
-        <input
-          class="form-control"
-          id="party_name"
-          name="party_name"
-          type="text"
-          placeholder="Contoh: Iuran anggota / Hibah"
-        />
-      `;
-    } else {
-      const recipientSigners = state.signatories.filter(
-        (s) => s.signer_position === 'penerima' && s.is_active
-      );
-
-      container.innerHTML = `
-        <label for="signer_penerima_id">Penerima</label>
-        <select class="form-control" id="signer_penerima_id" name="signer_penerima_id">
-          <option value="">Pilih penerima...</option>
-          ${recipientSigners
-          .map(
-            (s) => `
-            <option value="${s.id}">
-              ${escapeHtml(s.full_name)}${s.position_title ? ` — ${escapeHtml(s.position_title)}` : ''}
-            </option>
-          `
-          )
-          .join('')}
-          <hr>
-          <option value="new_master">Lainnya (Simpan ke Master Data)</option>
-          <option value="new_manual">Lainnya (Tanpa Simpan)</option>
-        </select>
-        <input type="hidden" name="penerima_name_manual" id="penerima_name_manual">
-        <input type="hidden" name="penerima_title_manual" id="penerima_title_manual">
-        <input type="hidden" name="penerima_identity_type_manual" id="penerima_identity_type_manual">
-        <input type="hidden" name="penerima_identity_number_manual" id="penerima_identity_number_manual">
-      `;
-
-      container.querySelector('#signer_penerima_id')?.addEventListener('change', (e) => {
-        handleRecipientChange(e.target.value);
-      });
-    }
-  }
-
-  async function handleRecipientChange(value) {
-    if (value === 'new_master' || value === 'new_manual') {
-      const isMaster = value === 'new_master';
-      const result = await openManualRecipientModal(isMaster);
-
-      if (result) {
-        if (isMaster) {
-          try {
-            setMessage('Menyimpan penandatangan baru...', 'info');
-            const newSigner = await createSignatory({
-              full_name: result.full_name,
-              position_title: result.position_title,
-              identity_type: result.identity_type,
-              identity_number: result.identity_number,
-              signer_position: 'penerima'
-            });
-
-            const masterData = await getMasterData();
-            state.signatories = masterData.signatories;
-            renderPartyField('keluar');
-
-            const select = page.querySelector('#signer_penerima_id');
-            if (select) select.value = newSigner.id;
-
-            setMessage('Penandatangan berhasil ditambahkan.', 'success');
-          } catch (error) {
-            setMessage(error.message || String(error), 'error');
-            page.querySelector('#signer_penerima_id').value = '';
-          }
-        } else {
-          page.querySelector('#penerima_name_manual').value = result.full_name;
-          page.querySelector('#penerima_title_manual').value = result.position_title;
-          page.querySelector('#penerima_identity_type_manual').value = result.identity_type;
-          page.querySelector('#penerima_identity_number_manual').value = result.identity_number;
-
-          const select = page.querySelector('#signer_penerima_id');
-          if (select) {
-            let tempOpt = select.querySelector('option[value="temp_manual"]');
-            if (!tempOpt) {
-              tempOpt = document.createElement('option');
-              tempOpt.value = 'temp_manual';
-              select.insertBefore(tempOpt, select.querySelector('option[value="new_master"]'));
-            }
-            tempOpt.textContent = `Manual: ${result.full_name}`;
-            select.value = 'temp_manual';
-          }
-        }
-      } else {
-        page.querySelector('#signer_penerima_id').value = '';
-      }
-    }
-  }
-
-  async function openManualRecipientModal(isMaster) {
-    return showContentModal({
-      title: isMaster ? 'Tambah Penerima Baru' : 'Input Penerima Manual',
-      message: isMaster
-        ? 'Data ini akan disimpan ke Master Data untuk penggunaan selanjutnya.'
-        : 'Data ini hanya akan disimpan untuk transaksi ini saja.',
-      tone: 'primary',
-      bodyHtml: `
-        <div class="modal-form-grid">
-          <div class="form-group">
-            <label for="manual-name">Nama Lengkap & Gelar</label>
-            <input type="text" id="manual-name" class="form-control" placeholder="Contoh: Ahmad, S.E." required>
-          </div>
-          <div class="form-group">
-            <label for="manual-title">Instansi atau Jabatan</label>
-            <input type="text" id="manual-title" class="form-control" placeholder="Contoh: Toko Makmur / Pemilik (Opsional)">
-          </div>
-          <div class="form-group">
-            <label for="manual-id-type">Jenis Identitas</label>
-            <input type="text" id="manual-id-type" class="form-control" placeholder="NIP/NIK (Opsional)">
-          </div>
-          <div class="form-group">
-            <label for="manual-id-number">Nomor Identitas</label>
-            <input type="text" id="manual-id-number" class="form-control" placeholder="Opsional">
-          </div>
-        </div>
-      `,
-      footerHtml: `
-        <button class="btn btn-light" type="button" data-modal-close>Batal</button>
-        <button class="btn btn-primary" type="button" id="confirm-manual-recipient">Simpan</button>
-      `,
-      onMount: (modal, { close }) => {
-        modal.querySelector('#confirm-manual-recipient').addEventListener('click', () => {
-          const full_name = modal.querySelector('#manual-name').value;
-          if (!full_name.trim()) {
-            alert('Nama wajib diisi.');
-            return;
-          }
-
-          close({
-            full_name,
-            position_title: modal.querySelector('#manual-title').value,
-            identity_type: modal.querySelector('#manual-id-type').value,
-            identity_number: modal.querySelector('#manual-id-number').value
-          });
-        });
-      }
-    });
   }
 
   function renderSummary() {
@@ -821,13 +420,42 @@ export function renderTransaksiPage({ profile }) {
     `;
   }
 
-  function resetForm() {
-    const form = page.querySelector('#transaction-form');
-    if (!form) return;
+  async function handleViewNotes(transactionId) {
+    const transaction = getTransactionById(transactionId);
 
-    form.reset();
-    page.querySelector('#transaction_date').value = getTodayInputDate();
-    renderCategoryOptions(page.querySelector('#type')?.value || 'masuk');
+    if (!transaction) {
+      setMessage('Transaksi tidak ditemukan.', 'error');
+      return;
+    }
+
+    const attachments = transaction.transaction_attachments || [];
+
+    if (!attachments.length) {
+      setMessage('Transaksi ini belum memiliki nota.', 'info');
+      return;
+    }
+
+    try {
+      setMessage('Membuka nota...', 'info');
+
+      const notes = await getSignedUrlsForAttachments(attachments);
+
+      hideMessage();
+
+      await showContentModal({
+        title: 'Foto Nota',
+        message: `${transaction.proof_number || 'Transaksi draft'} — ${transaction.description}`,
+        tone: 'primary',
+        bodyHtml: renderNotesPreview(notes),
+        footerHtml: `
+          <button class="btn btn-primary" type="button" data-modal-close>
+            Tutup
+          </button>
+        `
+      });
+    } catch (error) {
+      setMessage(error.message || String(error), 'error');
+    }
   }
 
   function getCategoryName(categoryId) {
@@ -864,7 +492,6 @@ export function renderTransaksiPage({ profile }) {
     messageBox.textContent = '';
   }
 }
-
 function canCreateTransaction(profile) {
   return ['admin', 'bendahara'].includes(profile?.role);
 }

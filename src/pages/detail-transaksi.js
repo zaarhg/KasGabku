@@ -2,7 +2,9 @@ import {
   getTransactionDetail,
   finalizeTransaction,
   cancelTransaction,
-  deleteDraftTransaction
+  deleteDraftTransaction,
+  updateTransaction,
+  getActiveCategories
 } from '../services/transaksi.js';
 
 import {
@@ -22,6 +24,7 @@ import {
   formatDate,
   formatDateTime,
   formatRupiah,
+  parseRupiah,
   formatTransactionStatus,
   formatTransactionType
 } from '../utils/format.js';
@@ -58,7 +61,7 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
         </p>
       </div>
 
-      <button class="btn btn-light" type="button" id="back-btn">
+      <button class="btn btn-primary" type="button" id="back-btn">
         ← Kembali
       </button>
     </div>
@@ -148,6 +151,15 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
         await handleDeleteDraft();
       }
 
+      if (action === 'edit') {
+        await handleEditTransaction();
+      }
+
+      if (action === 'view-doc') {
+        const id = button.dataset.id;
+        await handleViewDocument(id);
+      }
+
       if (action === 'generate-bend26') {
         await handleGenerateBend26();
       }
@@ -229,6 +241,21 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
                 <span class="detail-type-pill">
                   ${formatTransactionType(transaction.type)}
                 </span>
+
+                ${(() => {
+                  if (transaction.type !== 'keluar' || transaction.status !== 'final') return '';
+                  const bend26Docs = documents.filter(d => d.document_type === 'bend_26');
+                  const latest = bend26Docs[0];
+                  const needsUpdate = !latest || (transaction.updated_at && latest.generated_at &&
+                    new Date(transaction.updated_at).getTime() > new Date(latest.generated_at).getTime() + 2000);
+                  
+                  if (!needsUpdate) return '';
+                  return `
+                    <span class="detail-type-pill is-warning">
+                      Bend 26 ${!latest ? 'Belum Dibuat' : 'Perlu Update'}
+                    </span>
+                  `;
+                })()}
               </div>
 
               <h2>${escapeHtml(transaction.description)}</h2>
@@ -248,26 +275,17 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
             ${renderInfoItem('Tanggal', formatDate(transaction.transaction_date))}
             ${renderInfoItem('Jenis / Kategori', categoryName)}
             ${renderInfoItem(
-      transaction.type === 'masuk' ? 'Sumber Dana' : 'Penerima',
-      transaction.party_name || '-'
-    )}
-            ${renderInfoItem('Bulan/Tahun', `${transaction.period_month || '-'} / ${transaction.period_year || '-'}`)}
-            ${renderInfoItem('Finalisasi', transaction.finalized_at ? formatDateTime(transaction.finalized_at) : '-')}
-            ${renderInfoItem('Dibuat', formatDateTime(transaction.created_at))}
-            ${renderInfoItem('Terakhir Diubah', formatDateTime(transaction.updated_at))}
-            ${renderInfoItem('Dokumen Bend 26', getBend26Label(transaction, documents))}
-          </div>
-
-          <div class="detail-note-box">
-            <h3>Catatan</h3>
-            <p>${escapeHtml(transaction.notes || 'Tidak ada catatan.')}</p>
+              transaction.type === 'masuk' ? 'Sumber Dana' : 'Penerima',
+              transaction.party_name || '-',
+              true
+            )}
+            ${renderInfoItem('Rincian', transaction.notes || '-', true)}
           </div>
 
           <div class="detail-actions-block">
             <div class="detail-block-heading">
               <div>
                 <h3>Aksi Transaksi</h3>
-                <p>Aksi utama transaksi dilakukan dari halaman ini agar tidak memenuhi tabel.</p>
               </div>
             </div>
 
@@ -281,7 +299,7 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
           <section class="detail-panel">
             <div class="section-heading compact">
               <div>
-                <h2>Foto Nota</h2>
+                <h2>${isIncome ? 'Foto Surat / Kuitansi' : 'Foto Nota'}</h2>
                 <p>${attachments.length} dari maksimal ${MAX_NOTES_PER_TRANSACTION} foto</p>
               </div>
             </div>
@@ -298,25 +316,59 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       }
           </section>
 
+          ${!isIncome ? `
           <section class="detail-panel">
             <div class="section-heading compact">
               <div>
                 <h2>Dokumen PDF</h2>
-                <p>Bend 26 dan buku kas terkait transaksi ini.</p>
               </div>
             </div>
 
             ${renderDocumentList(documents)}
             ${renderBend26Action(transaction, documents)}
           </section>
+          ` : ''}
+
+          <section class="detail-panel">
+            <div class="section-heading compact">
+              <div>
+                <h2>Riwayat Status</h2>
+              </div>
+            </div>
+            ${renderTimelineList(transaction)}
+          </section>
         </aside>
       </div>
     `;
   }
 
-  function renderInfoItem(label, value) {
+  function renderTimelineList(transaction) {
+    const items = [
+      { label: 'Dibuat', value: transaction.created_at, icon: '✨' },
+      { label: 'Terakhir Diubah', value: transaction.updated_at, icon: '📝' },
+      { label: 'Finalisasi', value: transaction.finalized_at, icon: '✅' }
+    ];
+
     return `
-      <div class="detail-info-item">
+      <div class="document-list">
+        ${items
+          .map((item) => `
+            <div class="document-item" style="cursor: default; background: transparent; border-color: var(--border-soft); padding: 12px 14px;">
+              <span class="attachment-icon" style="font-size: 18px;">${item.icon}</span>
+              <span>
+                <strong>${item.label}</strong>
+                <small>${item.value ? formatDateTime(item.value) : '-'}</small>
+              </span>
+            </div>
+          `)
+          .join('')}
+      </div>
+    `;
+  }
+
+  function renderInfoItem(label, value, isWide = false) {
+    return `
+      <div class="detail-info-item ${isWide ? 'is-wide' : ''}">
         <span>${escapeHtml(label)}</span>
         <strong>${escapeHtml(value)}</strong>
       </div>
@@ -327,12 +379,6 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
     const role = profile?.role || 'viewer';
     const actions = [];
 
-    actions.push(`
-      <button class="btn btn-light" type="button" data-action="refresh">
-        Refresh
-      </button>
-    `);
-
     if (transaction.status === 'draft' && ['admin', 'bendahara'].includes(role)) {
       actions.push(`
         <button class="btn btn-primary" type="button" data-action="finalize">
@@ -341,18 +387,26 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       `);
     }
 
-    if (transaction.status === 'draft' && role === 'admin') {
+    if (transaction.status === 'final' && role === 'admin') {
       actions.push(`
-        <button class="btn btn-danger" type="button" data-action="delete-draft">
-          Hapus Draft
+        <button class="btn btn-primary" type="button" data-action="edit">
+          Edit Transaksi
         </button>
       `);
     }
 
-    if (transaction.status === 'final' && role === 'admin') {
+    if (transaction.status === 'final' && ['admin', 'bendahara'].includes(role)) {
       actions.push(`
         <button class="btn btn-danger" type="button" data-action="cancel">
           Batalkan Final
+        </button>
+      `);
+    }
+
+    if (transaction.status === 'draft' && ['admin', 'bendahara'].includes(role)) {
+      actions.push(`
+        <button class="btn btn-danger" type="button" data-action="delete-draft">
+          Hapus Draft
         </button>
       `);
     }
@@ -375,20 +429,20 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
         .map((attachment, index) => {
           const isAdmin = profile?.role === 'admin';
           return `
-              <div class="attachment-row">
-                <button
+              <div class="attachment-row" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+                <div
                   class="attachment-item"
-                  type="button"
                   data-action="view-notes"
+                  style="flex: 1; min-width: 0; margin-bottom: 0; cursor: pointer;"
                 >
                   <span class="attachment-icon">🧾</span>
-                  <span>
-                    <strong>${escapeHtml(attachment.file_name || `Nota ${index + 1}`)}</strong>
-                    <small>${formatFileSize(attachment.file_size)} • ${formatDateTime(attachment.created_at)}</small>
+                  <span style="display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
+                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;">${escapeHtml(attachment.file_name || `Nota ${index + 1}`)}</strong>
+                    <small style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;">${formatFileSize(attachment.file_size)} • ${formatDateTime(attachment.created_at)}</small>
                   </span>
-                </button>
+                </div>
                 ${isAdmin ? `
-                  <button class="btn btn-small btn-danger btn-delete-note" type="button" data-action="delete-note" data-id="${attachment.id}" title="Hapus Foto">
+                  <button class="btn btn-small btn-danger btn-delete-note" type="button" data-action="delete-note" data-id="${attachment.id}" title="Hapus Foto" style="width: max-content; max-width: 80px; flex: 0 0 auto; white-space: nowrap; padding: 6px 12px; align-self: stretch; margin-bottom: 0; border-radius: 18px;">
                     Hapus
                   </button>
                 ` : ''}
@@ -423,22 +477,22 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
           if (isOutdated) {
             const isAdmin = profile?.role === 'admin';
             return `
-              <div class="attachment-row">
-                <button
+              <div class="attachment-row" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+                <div
                   class="document-item is-outdated"
-                  type="button"
                   data-action="view-outdated-doc"
+                  style="flex: 1; min-width: 0; margin-bottom: 0; cursor: pointer;"
                 >
                   <span class="attachment-icon">⚠️</span>
-                  <span>
-                    <strong>${escapeHtml(formatDocumentType(document.document_type))} (Kadaluwarsa)</strong>
-                    <small>
+                  <span style="display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
+                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;">${escapeHtml(formatDocumentType(document.document_type))} (Kadaluwarsa)</strong>
+                    <small style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;">
                       Dibuat ${document.generated_at ? formatDateTime(document.generated_at) : '-'} • Nota berubah.
                     </small>
                   </span>
-                </button>
+                </div>
                 ${isAdmin ? `
-                  <button class="btn btn-small btn-danger btn-delete-note" type="button" data-action="delete-document" data-id="${document.id}" title="Hapus Dokumen">
+                  <button class="btn btn-small btn-danger btn-delete-note" type="button" data-action="delete-document" data-id="${document.id}" title="Hapus Dokumen" style="width: max-content; max-width: 80px; flex: 0 0 auto; white-space: nowrap; padding: 6px 12px; align-self: stretch; margin-bottom: 0; border-radius: 18px;">
                     Hapus
                   </button>
                 ` : ''}
@@ -447,21 +501,21 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
           }
 
           return `
-              <a
+              <div
                 class="document-item"
-                href="${escapeHtml(document.file_url || '#')}"
-                target="_blank"
-                rel="noopener noreferrer"
+                data-action="view-doc"
+                data-id="${document.id}"
+                style="width: 100%; min-width: 0; cursor: pointer;"
               >
                 <span class="attachment-icon">📄</span>
-                <span>
-                  <strong>${escapeHtml(formatDocumentType(document.document_type))}</strong>
-                  <small>
+                <span style="display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
+                  <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;">${escapeHtml(formatDocumentType(document.document_type))}</strong>
+                  <small style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;">
                     ${escapeHtml(document.file_name || '-')}
                     ${document.generated_at ? ` • ${formatDateTime(document.generated_at)}` : ''}
                   </small>
                 </span>
-              </a>
+              </div>
             `;
         })
         .join('')}
@@ -590,18 +644,42 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
           </div>
         `,
         footerHtml: `
-          <button class="btn btn-light" type="button" data-modal-close>
-            Tutup
-          </button>
           <a
             class="btn btn-primary"
             href="${escapeHtml(document.file_url || '#')}"
             target="_blank"
             rel="noopener noreferrer"
+            data-modal-close
           >
             Buka PDF
           </a>
-        `
+          <button class="btn btn-secondary" type="button" data-action="share-doc">
+            Bagikan
+          </button>
+          <button class="btn btn-light" type="button" data-modal-close>
+            Tutup
+          </button>
+        `,
+        onMount: (modal) => {
+          modal.querySelector('[data-action="share-doc"]')?.addEventListener('click', () => {
+            const proofNumber = transaction.proof_number || 'Draft';
+            const shareTitle = `Bend 26 Gabugan Bridge Kulon Progo - ${proofNumber}`;
+            const shareUrl = document.file_url;
+            const fullMessage = `${shareTitle}\n\n${shareUrl}`;
+
+            if (navigator.share) {
+              navigator.share({
+                title: shareTitle,
+                text: fullMessage
+              }).catch(() => {
+                navigator.share({ title: shareTitle, url: shareUrl });
+              });
+            } else {
+              navigator.clipboard.writeText(fullMessage);
+              alert('Link dan keterangan berhasil disalin ke clipboard.');
+            }
+          });
+        }
       });
     } catch (error) {
       if (loadingModal) {
@@ -812,6 +890,68 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
     }
   }
 
+  async function handleViewDocument(documentId) {
+    const document = state.transaction?.generated_documents?.find(d => d.id === documentId);
+    if (!document) return;
+
+    await showContentModal({
+      title: formatDocumentType(document.document_type),
+      message: document.file_name || 'Detail dokumen PDF.',
+      tone: 'primary',
+      bodyHtml: `
+        <div class="success-doc-box">
+          <strong>${escapeHtml(document.file_name || 'Dokumen.pdf')}</strong>
+          <p style="margin-top: 8px; font-size: 13px; color: var(--text-soft);">
+            Dibuat pada ${document.generated_at ? formatDateTime(document.generated_at) : '-'}<br>
+            Tersimpan di Google Drive
+          </p>
+        </div>
+      `,
+      footerHtml: `
+        <a
+          class="btn btn-primary"
+          href="${escapeHtml(document.file_url || '#')}"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-modal-close
+        >
+          Buka PDF
+        </a>
+        <button class="btn btn-secondary" type="button" data-action="share-doc">
+          Bagikan
+        </button>
+        <button class="btn btn-light" type="button" data-modal-close>
+          Tutup
+        </button>
+      `,
+      onMount: (modal) => {
+        modal.querySelector('[data-action="share-doc"]')?.addEventListener('click', () => {
+          let shareTitle = 'Dokumen Kas Gabukan';
+          if (document.document_type === 'bend_26') {
+            shareTitle = `Bend 26 Gabugan Bridge Kulon Progo - ${state.transaction.proof_number || 'Draft'}`;
+          } else if (document.document_type === 'buku_kas_bulanan') {
+            shareTitle = `Buku Kas Gabugan Bridge Kulon Progo Bulanan ${state.transaction.period_month} ${state.transaction.period_year}`;
+          }
+          
+          const shareUrl = document.file_url;
+          const fullMessage = `${shareTitle}\n\n${shareUrl}`;
+
+          if (navigator.share) {
+            navigator.share({
+              title: shareTitle,
+              text: fullMessage
+            }).catch(() => {
+              navigator.share({ title: shareTitle, url: shareUrl });
+            });
+          } else {
+            navigator.clipboard.writeText(fullMessage);
+            alert('Link dan keterangan berhasil disalin ke clipboard.');
+          }
+        });
+      }
+    });
+  }
+
   async function handleFinalize() {
     const ok = await showConfirmModal({
       title: 'Finalkan Transaksi?',
@@ -819,7 +959,8 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
         'Setelah transaksi difinalkan, nomor bukti akan dibuat otomatis dan transaksi masuk ke buku kas.',
       confirmText: 'Ya, Finalkan',
       cancelText: 'Batal',
-      tone: 'primary'
+      tone: 'primary',
+      cancelTone: 'secondary'
     });
 
     if (!ok) return;
@@ -845,6 +986,7 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       confirmText: 'Batalkan Transaksi',
       cancelText: 'Kembali',
       tone: 'danger',
+      cancelTone: 'secondary',
       required: true
     });
 
@@ -867,7 +1009,8 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
         'Draft transaksi akan dihapus permanen. Gunakan ini hanya untuk data salah input atau data percobaan.',
       confirmText: 'Ya, Hapus Draft',
       cancelText: 'Batal',
-      tone: 'danger'
+      tone: 'danger',
+      cancelTone: 'secondary'
     });
 
     if (!ok) return;
@@ -893,7 +1036,8 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       message: 'Apakah Anda yakin ingin menghapus foto nota ini? Tindakan ini tidak bisa dibatalkan.',
       confirmText: 'Ya, Hapus',
       cancelText: 'Batal',
-      tone: 'danger'
+      tone: 'danger',
+      cancelTone: 'secondary'
     });
 
     if (!ok) return;
@@ -908,6 +1052,141 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
     }
   }
 
+  async function handleEditTransaction() {
+    const transaction = state.transaction;
+    if (!transaction) return;
+
+    try {
+      setMessage('Memuat data pendukung...', 'info');
+      const [categories, signatories] = await Promise.all([
+        getActiveCategories(),
+        getActiveSignatories()
+      ]);
+      hideMessage();
+
+      const isIncome = transaction.type === 'masuk';
+      const recipients = signatories.filter(s => s.signer_position === 'penerima' && s.is_active);
+
+      await showContentModal({
+        title: 'Edit Transaksi',
+        message: 'Anda sedang mengedit transaksi yang sudah final. Perubahan akan dicatat dalam log.',
+        tone: 'primary',
+        bodyHtml: `
+          <form id="edit-transaction-form" class="modal-form-grid">
+            <div class="form-group">
+              <label>Tanggal</label>
+              <input type="date" name="transaction_date" class="form-control" value="${transaction.transaction_date}" required>
+            </div>
+            <div class="form-group">
+              <label>Kategori</label>
+              <select name="category_id" class="form-control">
+                <option value="">Tanpa kategori</option>
+                ${categories.filter(c => c.applies_to === 'all' || c.applies_to === transaction.type)
+          .map(c => `<option value="${c.id}" ${c.id === transaction.category_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`)
+          .join('')}
+              </select>
+            </div>
+            <div class="form-group form-group-wide">
+              <label>Uraian</label>
+              <input type="text" name="description" class="form-control" value="${escapeHtml(transaction.description)}" required>
+            </div>
+            <div class="form-group">
+              <label>Nominal</label>
+              <input type="text" id="edit-amount-input" class="form-control" value="${formatRupiah(transaction.amount)}" required>
+            </div>
+            <div class="form-group">
+              <label>${isIncome ? 'Sumber Dana' : 'Penerima'}</label>
+              ${isIncome ? `
+                <input type="text" name="party_name" class="form-control" value="${escapeHtml(transaction.party_name || '')}" required>
+              ` : `
+                <select id="edit-signer-id" class="form-control">
+                  <option value="">Pilih penerima...</option>
+                  ${recipients.map(s => `<option value="${s.id}" ${s.id === transaction.signer_penerima_id ? 'selected' : ''}>${escapeHtml(s.full_name)}</option>`).join('')}
+                  <option value="new_manual" ${!transaction.signer_penerima_id ? 'selected' : ''}>Lainnya (Ketik Manual)</option>
+                </select>
+                <div id="edit-manual-wrap" class="${transaction.signer_penerima_id ? 'is-hidden' : ''}" style="margin-top: 8px;">
+                  <input type="text" id="edit-manual-name" class="form-control" placeholder="Nama Penerima..." value="${escapeHtml(transaction.penerima_name_manual || '')}">
+                </div>
+              `}
+            </div>
+            <div class="form-group form-group-wide">
+              <label>Rincian</label>
+              <textarea name="notes" class="form-control" rows="2">${escapeHtml(transaction.notes || '')}</textarea>
+            </div>
+          </form>
+        `,
+        footerHtml: `
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button" id="submit-edit-btn">Simpan Perubahan</button>
+            <button class="btn btn-secondary" type="button" data-modal-close>Batal</button>
+          </div>
+        `,
+        onMount: (modalPage, { close }) => {
+          const amountInput = modalPage.querySelector('#edit-amount-input');
+          amountInput.addEventListener('input', (e) => {
+            const val = e.target.value.replace(/\D/g, '');
+            e.target.value = formatRupiah(val);
+          });
+
+          const signerSelect = modalPage.querySelector('#edit-signer-id');
+          const manualWrap = modalPage.querySelector('#edit-manual-wrap');
+          signerSelect?.addEventListener('change', (e) => {
+            if (e.target.value === 'new_manual') {
+              manualWrap?.classList.remove('is-hidden');
+            } else {
+              manualWrap?.classList.add('is-hidden');
+            }
+          });
+
+          modalPage.querySelector('#submit-edit-btn').addEventListener('click', async () => {
+            const form = modalPage.querySelector('#edit-transaction-form');
+            const formData = new FormData(form);
+
+            const payload = {
+              transaction_date: formData.get('transaction_date'),
+              category_id: formData.get('category_id') || null,
+              description: formData.get('description'),
+              amount: parseRupiah(amountInput.value),
+              notes: formData.get('notes')
+            };
+
+            if (isIncome) {
+              payload.party_name = formData.get('party_name');
+            } else {
+              const sid = signerSelect.value;
+              if (sid === 'new_manual') {
+                payload.signer_penerima_id = null;
+                payload.penerima_name_manual = modalPage.querySelector('#edit-manual-name').value;
+                payload.party_name = payload.penerima_name_manual;
+              } else if (sid) {
+                const s = signatories.find(i => i.id === sid);
+                payload.signer_penerima_id = sid;
+                payload.party_name = s?.full_name || '';
+              }
+            }
+
+            if (!payload.description || !payload.amount) {
+              alert('Uraian dan Nominal wajib diisi.');
+              return;
+            }
+
+            try {
+              setMessage('Menyimpan perubahan...', 'info');
+              await updateTransaction(transaction.id, payload);
+              close();
+              setMessage('Transaksi berhasil diperbarui.', 'success');
+              await loadDetail();
+            } catch (err) {
+              setMessage(err.message || String(err), 'error');
+            }
+          });
+        }
+      });
+    } catch (err) {
+      setMessage(err.message || String(err), 'error');
+    }
+  }
+
   async function handleDeleteDocument(id) {
     if (!id) return;
 
@@ -916,7 +1195,8 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
       message: 'Apakah Anda yakin ingin menghapus dokumen PDF ini? Tindakan ini tidak bisa dibatalkan.',
       confirmText: 'Ya, Hapus',
       cancelText: 'Batal',
-      tone: 'danger'
+      tone: 'danger',
+      cancelTone: 'secondary'
     });
 
     if (!ok) return;

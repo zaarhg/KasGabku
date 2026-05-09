@@ -21,17 +21,16 @@ export function renderDashboardPage({ profile }) {
   };
 
   page.innerHTML = `
-    <div class="page-header dashboard-page-header">
-      <div class="dashboard-info-header">
-        <p class="eyebrow">Beranda</p>
-        <h1 class="page-title">Dashboard Kas Gabku</h1>
-        <div class="description-with-pill">
-          <p class="page-description">
-            Ringkasan saldo, transaksi, pengeluaran per kategori, dan dokumen terbaru.
-          </p>
-          <span class="dashboard-role-pill ${getRoleBadgeClass(profile?.role)}">
-            ${escapeHtml(formatRole(profile?.role || 'viewer'))}
-          </span>
+    <div class="page-header dashboard-page-header" style="display: block; width: 100%;">
+      <div class="dashboard-info-header" style="display: block; width: 100%;">
+        <div class="welcome-glass-banner" style="display: flex; justify-content: space-between; align-items: center; width: 100%; min-width: 100%;">
+          <span class="welcome-text-large" style="color: var(--gray-900); font-weight: 500;">Selamat Datang, <strong style="text-transform: capitalize; color: var(--blue-900); font-weight: 800;">${escapeHtml(profile?.email?.split('@')[0] || 'Pengguna')}</strong></span>
+          <div class="welcome-role-section">
+            <span class="welcome-role-label" style="white-space: nowrap;">Role Anda:</span>
+            <span class="welcome-role-capsule ${profile?.role || 'viewer'}">
+              ${escapeHtml(formatRole(profile?.role || 'viewer'))}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -72,20 +71,34 @@ export function renderDashboardPage({ profile }) {
             <div class="dashboard-action-grid admin-action-grid">
               <a class="dashboard-action-item action-blue" href="#admin">
                 <span>◉</span>
-                <strong>Admin User</strong>
-                <small>Kelola role dan status user</small>
+                <div class="action-info">
+                  <strong>Admin User</strong>
+                  <small>Kelola role dan status user</small>
+                </div>
               </a>
 
-              <a class="dashboard-action-item action-indigo" href="#log">
+              <a class="dashboard-action-item action-blue" href="#log">
                 <span>◎</span>
-                <strong>Log Aktivitas</strong>
-                <small>Audit aktivitas aplikasi</small>
+                <div class="action-info">
+                  <strong>Log Aktiv..</strong>
+                  <small>Audit aktivitas aplikasi</small>
+                </div>
               </a>
 
-              <a class="dashboard-action-item action-teal" href="#backup">
+              <a class="dashboard-action-item action-blue" href="#master-data">
+                <span>⚙</span>
+                <div class="action-info">
+                  <strong>Master Data</strong>
+                  <small>Kategori & Penandatangan</small>
+                </div>
+              </a>
+
+              <a class="dashboard-action-item action-blue" href="#backup">
                 <span>⇩</span>
-                <strong>Backup</strong>
-                <small>Export data JSON</small>
+                <div class="action-info">
+                  <strong>Backup</strong>
+                  <small>Export data JSON</small>
+                </div>
               </a>
             </div>
           </section>
@@ -93,7 +106,6 @@ export function renderDashboardPage({ profile }) {
       : ''
     }
 
-    <div class="dashboard-grid">
       <section class="table-card">
         <div class="section-heading">
           <div>
@@ -105,28 +117,12 @@ export function renderDashboardPage({ profile }) {
         <div id="expense-category-list"></div>
       </section>
 
-      <section class="table-card">
-        <div class="section-heading">
-          <div>
-            <h2>Dokumen PDF Terbaru</h2>
-            <p>Bend 26 dan Buku Kas yang terakhir dibuat.</p>
-          </div>
-        </div>
-
-        <div id="dashboard-documents"></div>
-      </section>
-    </div>
-
     <section class="table-card">
       <div class="section-heading">
         <div>
           <h2>Transaksi Terbaru</h2>
           <p>Aktivitas pencatatan kas terbaru.</p>
         </div>
-
-        <a class="btn btn-light" href="#transaksi">
-          Lihat Semua
-        </a>
       </div>
 
       <div class="table-responsive">
@@ -134,7 +130,6 @@ export function renderDashboardPage({ profile }) {
           <thead>
             <tr>
               <th>Tanggal</th>
-              <th>No Bukti</th>
               <th>Uraian</th>
               <th>Tipe</th>
               <th class="text-right">Nominal</th>
@@ -143,7 +138,7 @@ export function renderDashboardPage({ profile }) {
           </thead>
           <tbody id="recent-transactions-body">
             <tr>
-              <td colspan="6">Memuat transaksi terbaru...</td>
+              <td colspan="5">Memuat transaksi terbaru...</td>
             </tr>
           </tbody>
         </table>
@@ -201,7 +196,6 @@ export function renderDashboardPage({ profile }) {
       renderBalance();
       renderSummary();
       renderExpenseByCategory();
-      renderDocuments();
       renderRecentTransactions();
       checkPwaPrompt();
 
@@ -240,10 +234,18 @@ export function renderDashboardPage({ profile }) {
         </div>
 
         <div>
-          <span>Selisih bulan ini</span>
-          <strong class="${netClass}">
-            ${formatRupiah(monthNet)}
-          </strong>
+          <span>Siklus Transaksi</span>
+          <strong>${summary.finalCount} Final / ${summary.draftCount} Draft</strong>
+        </div>
+
+        <div>
+          <span>Kas Masuk</span>
+          <strong class="amount-income">${formatRupiah(summary.currentMonthIncome)}</strong>
+        </div>
+
+        <div>
+          <span>Kas Keluar</span>
+          <strong class="amount-expense">${formatRupiah(summary.currentMonthExpense)}</strong>
         </div>
       </div>
     `;
@@ -256,31 +258,7 @@ export function renderDashboardPage({ profile }) {
     const summary = state.data.summary;
     const periodLabel = `${getMonthName(state.data.period.month)} ${state.data.period.year}`;
 
-    root.innerHTML = `
-      <article class="dashboard-metric-card">
-        <span>Kas Masuk Bulan Ini</span>
-        <strong>${formatRupiah(summary.currentMonthIncome)}</strong>
-        <small>${escapeHtml(periodLabel)}</small>
-      </article>
-
-      <article class="dashboard-metric-card">
-        <span>Kas Keluar Bulan Ini</span>
-        <strong>${formatRupiah(summary.currentMonthExpense)}</strong>
-        <small>${escapeHtml(periodLabel)}</small>
-      </article>
-
-      <article class="dashboard-metric-card">
-        <span>Transaksi Draft</span>
-        <strong>${summary.draftCount}</strong>
-        <small>Belum masuk buku kas</small>
-      </article>
-
-      <article class="dashboard-metric-card">
-        <span>Transaksi Final</span>
-        <strong>${summary.finalCount}</strong>
-        <small>Total transaksi yang sah</small>
-      </article>
-    `;
+    root.innerHTML = ''; // Moved to balance card
   }
 
   function renderExpenseByCategory() {
@@ -288,11 +266,20 @@ export function renderDashboardPage({ profile }) {
     const caption = page.querySelector('#expense-caption');
     if (!root || !state.data) return;
 
-    const rows = state.data.expenseByCategory || [];
-    const total = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const allRows = state.data.expenseByCategory || [];
+    // Sort descending by amount and take top 3
+    const rows = [...allRows]
+      .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
+      .slice(0, 3);
+
+    const total = allRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
 
     if (caption) {
-      caption.textContent = `${rows.length} kategori pengeluaran pada bulan ini.`;
+      if (allRows.length > 3) {
+        caption.textContent = `3 kategori pengeluaran terbanyak dari total ${allRows.length} kategori.`;
+      } else {
+        caption.textContent = `${allRows.length} kategori pengeluaran pada bulan ini.`;
+      }
     }
 
     if (!rows.length) {
@@ -328,56 +315,16 @@ export function renderDashboardPage({ profile }) {
     `;
   }
 
-  function renderDocuments() {
-    const root = page.querySelector('#dashboard-documents');
-    if (!root || !state.data) return;
-
-    const documents = state.data.documents || [];
-
-    if (!documents.length) {
-      root.innerHTML = `
-        <div class="empty-mini">
-          Belum ada dokumen PDF yang dibuat.
-        </div>
-      `;
-      return;
-    }
-
-    root.innerHTML = `
-      <div class="document-list">
-        ${documents
-        .map((document) => {
-          return `
-              <a
-                class="document-item"
-                href="${escapeHtml(document.file_url || '#')}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span class="attachment-icon">📄</span>
-                <span>
-                  <strong>${escapeHtml(formatDocumentType(document.document_type))}</strong>
-                  <small>${escapeHtml(document.file_name || '-')}</small>
-                  <small>${document.generated_at ? formatDateTime(document.generated_at) : '-'}</small>
-                </span>
-              </a>
-            `;
-        })
-        .join('')}
-      </div>
-    `;
-  }
-
   function renderRecentTransactions() {
     const body = page.querySelector('#recent-transactions-body');
     if (!body || !state.data) return;
 
-    const rows = state.data.recentTransactions || [];
+    const rows = (state.data.recentTransactions || []).slice(0, 5);
 
     if (!rows.length) {
       body.innerHTML = `
         <tr>
-          <td colspan="6">
+          <td colspan="5">
             <div class="empty-state">Belum ada transaksi.</div>
           </td>
         </tr>
@@ -392,9 +339,6 @@ export function renderDashboardPage({ profile }) {
         return `
           <tr>
             <td>${formatDate(transaction.transaction_date)}</td>
-            <td>
-              <strong>${escapeHtml(transaction.proof_number || 'Belum final')}</strong>
-            </td>
             <td>
               <a class="table-main-link" href="#detail-transaksi/${transaction.id}">
                 ${escapeHtml(transaction.description || '-')}
@@ -446,18 +390,11 @@ export function renderDashboardPage({ profile }) {
       `;
     }
 
-    if (documents) {
-      documents.innerHTML = `
-        <div class="empty-mini">
-          Gagal memuat dokumen terbaru.
-        </div>
-      `;
-    }
 
     if (transactions) {
       transactions.innerHTML = `
         <tr>
-          <td colspan="6">
+          <td colspan="5">
             <div class="empty-state">Gagal memuat transaksi terbaru.</div>
           </td>
         </tr>

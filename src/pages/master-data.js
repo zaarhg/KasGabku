@@ -748,16 +748,28 @@ export function renderMasterDataPage({ profile }) {
   }
 
   function updateSignatoryTitleLabel(position) {
-    const label = page.querySelector('label[for="signatory-title"]');
-    const input = page.querySelector('#signatory-title');
-    if (!label || !input) return;
+    const titleInput = page.querySelector('#signatory-title');
+    const idTypeInput = page.querySelector('#identity-type');
+    const idNumberInput = page.querySelector('#identity-number');
+    
+    const titleGroup = titleInput?.closest('.form-group');
+    const idTypeGroup = idTypeInput?.closest('.form-group');
+    const idNumberGroup = idNumberInput?.closest('.form-group');
 
     if (position === 'penerima') {
-      label.textContent = 'Instansi atau Jabatan';
-      input.placeholder = 'Contoh: Toko Makmur / Pemilik';
+      titleGroup?.classList.add('is-hidden');
+      idTypeGroup?.classList.add('is-hidden');
+      idNumberGroup?.classList.add('is-hidden');
     } else {
-      label.textContent = 'Jabatan';
-      input.placeholder = 'Contoh: Bendahara';
+      titleGroup?.classList.remove('is-hidden');
+      idTypeGroup?.classList.remove('is-hidden');
+      idNumberGroup?.classList.remove('is-hidden');
+      
+      const label = page.querySelector('label[for="signatory-title"]');
+      if (label && titleInput) {
+        label.textContent = 'Jabatan';
+        titleInput.placeholder = 'Contoh: Bendahara';
+      }
     }
   }
 
@@ -844,11 +856,13 @@ export function renderMasterDataPage({ profile }) {
           <tr class="${signatory.is_active ? '' : 'row-muted'}">
             <td>
               <strong>${escapeHtml(signatory.full_name)}</strong>
-              <small>${escapeHtml(signatory.position_title)}</small>
-              ${signatory.identity_number
-            ? `<small>${escapeHtml(signatory.identity_type || 'ID')}: ${escapeHtml(signatory.identity_number)}</small>`
-            : ''
-          }
+              ${signatory.signer_position !== 'penerima' ? `
+                <small>${escapeHtml(signatory.position_title)}</small>
+                ${signatory.identity_number
+                  ? `<small>${escapeHtml(signatory.identity_type || 'ID')}: ${escapeHtml(signatory.identity_number)}</small>`
+                  : ''
+                }
+              ` : ''}
             </td>
             <td>
               ${escapeHtml(formatSignerPosition(signatory.signer_position))}

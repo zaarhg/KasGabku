@@ -107,7 +107,7 @@ export async function generateBend26Pdf({
         amountNumber: Number(transaction.amount || 0),
         amountWords: terbilangRupiah(transaction.amount),
         paymentFor: transaction.notes
-            ? `${transaction.description}\n(Catatan: ${transaction.notes})`
+            ? `${transaction.description}\nRincian: ${transaction.notes}`
             : transaction.description,
         notes: transaction.notes || '',
         transactionDate: transaction.transaction_date,
@@ -568,10 +568,12 @@ function getTodayDate() {
 }
 
 function mapSignerForGas(signer) {
+    const isRecipient = signer?.signer_position === 'penerima' || (!signer?.signer_position && signer?.full_name);
+    
     return {
-        fullName: signer.full_name || '',
-        positionTitle: signer.position_title || '',
-        identityType: signer.identity_type || '',
-        identityNumber: signer.identity_number || ''
+        fullName: signer?.full_name || '',
+        positionTitle: isRecipient ? '' : (signer?.position_title || ''),
+        identityType: isRecipient ? '' : (signer?.identity_type || ''),
+        identityNumber: isRecipient ? '' : (signer?.identity_number || '')
     };
 }
