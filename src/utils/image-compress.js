@@ -1,6 +1,6 @@
 const DEFAULT_OPTIONS = {
-    maxWidth: 1600,
-    maxHeight: 1600,
+    maxWidth: 960,
+    maxHeight: 960,
     quality: 0.78,
     targetMaxBytes: 750 * 1024,
     outputType: 'image/jpeg'
