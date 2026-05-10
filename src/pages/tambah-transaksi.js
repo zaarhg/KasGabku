@@ -135,22 +135,25 @@ export function renderTambahTransaksiPage({ profile }) {
           </div>
 
           <div class="form-group form-group-wide" style="margin-top: 16px;">
-            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 18px;">
+            <div style="background: #eff6ff; border: 2px dashed #bfdbfe; border-radius: 24px; padding: 22px; transition: all 0.2s ease;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                <div>
-                  <strong style="display: block; color: var(--text-heading); font-size: 15px; margin-bottom: 2px;">Foto Nota</strong>
-                  <span style="color: var(--text-muted); font-size: 13px;">Opsional. Pilih nota untuk transaksi ini.</span>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                  <div style="width: 42px; height: 42px; background: #dbeafe; border-radius: 12px; display: grid; place-items: center; font-size: 20px;">📸</div>
+                  <div>
+                    <strong style="display: block; color: #1e40af; font-size: 15px; margin-bottom: 2px;">Foto Nota</strong>
+                    <span style="color: #60a5fa; font-size: 12px; font-weight: 600;">Maksimal 1 foto (WAJIB JIKA ADA)</span>
+                  </div>
                 </div>
               </div>
-              <div id="pending-note-preview" style="display: none; align-items: center; gap: 8px; margin-bottom: 12px; padding: 12px; background: var(--gray-50); border: 1px dashed var(--gray-300); border-radius: 12px;">
-                <span style="font-size: 20px;">📄</span>
-                <div style="display: flex; flex-direction: column; overflow: hidden;">
-                  <strong id="pending-note-name" style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--gray-800);"></strong>
-                  <small id="pending-note-size" style="font-size: 12px; color: var(--gray-500);"></small>
+              <div id="pending-note-preview" style="display: none; align-items: center; gap: 10px; margin-bottom: 14px; padding: 14px; background: #fff; border: 1.5px solid #bfdbfe; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <span style="font-size: 24px;">📄</span>
+                <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                  <strong id="pending-note-name" style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1e40af;"></strong>
+                  <small id="pending-note-size" style="font-size: 12px; color: #60a5fa; font-weight: 600;"></small>
                 </div>
-                <button type="button" id="btn-cancel-note" class="btn btn-small btn-light" style="margin-left: auto; padding: 4px 8px;">Batal</button>
+                <button type="button" id="btn-cancel-note" class="btn btn-small btn-light" style="padding: 6px 12px; border-radius: 10px; color: #ef4444;">Batal</button>
               </div>
-              <button class="btn btn-light full-width" type="button" id="btn-pick-note">
+              <button class="btn full-width" type="button" id="btn-pick-note" style="background: #ffffff; color: #2563eb; border: 1.5px solid #bfdbfe; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-radius: 14px;">
                 Pilih Foto Nota
               </button>
             </div>

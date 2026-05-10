@@ -1954,16 +1954,16 @@ textarea.form-control {
         bottom: 14px;
         min-height: 64px;
         border-radius: 24px;
-        background: rgba(255, 255, 255, 0.94);
-        border: 1px solid var(--border);
-        box-shadow: var(--shadow-md);
-        backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(72px, 1fr);
-        overflow-x: auto;
-        padding: 8px;
-        gap: 6px;
+        grid-template-columns: repeat(4, 1fr);
+        overflow: hidden;
+        padding: 6px;
+        gap: 2px;
     }
 
     .mobile-nav::-webkit-scrollbar {
@@ -1972,14 +1972,17 @@ textarea.form-control {
 
     .mobile-nav a {
         border-radius: 18px;
-        display: grid;
-        place-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         gap: 2px;
         color: var(--text-muted);
-        font-size: 11px;
-        font-weight: 950;
-        white-space: nowrap;
-        padding: 7px 8px;
+        font-size: 10px;
+        font-weight: 800;
+        text-align: center;
+        padding: 6px 2px;
+        min-width: 0;
     }
 
     .mobile-nav a.is-active {
@@ -3888,7 +3891,8 @@ body,
 .nav-link,
 .dashboard-action-item,
 .document-item,
-.attachment-item {
+.attachment-item,
+.modal-card {
     -webkit-user-select: none;
     user-select: none;
 }
@@ -3898,7 +3902,6 @@ textarea,
 select,
 option,
 .form-control,
-.modal-card,
 .message-box,
 .data-table,
 .table-responsive,

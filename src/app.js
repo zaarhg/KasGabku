@@ -26,7 +26,7 @@ const routes = [
   },
   {
     key: 'tambah-transaksi',
-    label: 'Tambah Kas',
+    label: 'Tambah Transaksi',
     icon: '+',
     roles: ['admin', 'bendahara']
   },
@@ -43,16 +43,15 @@ const routes = [
     roles: ['admin', 'bendahara', 'viewer']
   },
   {
-    key: 'master-data',
-    label: 'Master Data',
-    icon: '⚙',
-    roles: ['admin'],
-    hiddenInSidebar: true
-  },
-  {
     key: 'admin',
     label: 'Admin User',
     icon: '◉',
+    roles: ['admin']
+  },
+  {
+    key: 'master-data',
+    label: 'Master Data',
+    icon: '⚙',
     roles: ['admin']
   },
   {

@@ -127,7 +127,7 @@ export async function deleteTransactionNote(attachmentId) {
         .remove([attachment.file_path]);
 
     if (storageError) {
-        console.warn('Storage delete error:', storageError);
+        throw new Error('Gagal menghapus file fisik di Storage: ' + storageError.message);
     }
 
     const { error: deleteError } = await supabase

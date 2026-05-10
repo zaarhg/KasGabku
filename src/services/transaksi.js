@@ -226,6 +226,48 @@ export async function updateTransaction(transactionId, payload) {
     return data;
 }
 
+export async function deleteTransactionAdmin(transactionId) {
+    const { data: transaction, error: getError } = await supabase
+        .from('transactions')
+        .select(`
+            id,
+            description,
+            transaction_attachments (id, file_path)
+        `)
+        .eq('id', transactionId)
+        .single();
+
+    if (getError) throw getError;
+
+    const attachments = transaction.transaction_attachments || [];
+    if (attachments.length > 0) {
+        const filePaths = attachments.map(a => a.file_path);
+        const { error: storageError } = await supabase.storage
+            .from(import.meta.env.VITE_SUPABASE_BUCKET_NOTES || 'transaction-notes')
+            .remove(filePaths);
+        
+        if (storageError) {
+            throw new Error('Gagal membersihkan file nota di Storage: ' + storageError.message);
+        }
+    }
+
+    const { error: deleteError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionId);
+
+    if (deleteError) throw deleteError;
+
+    await logActivity({
+        action: 'admin_delete_transaction',
+        entityTable: 'transactions',
+        entityId: transactionId,
+        description: `Transaksi dihapus permanen oleh admin: ${transaction.description}`
+    });
+
+    return true;
+}
+
 
 export async function finalizeTransaction(transactionId) {
     const { data, error } = await supabase.rpc('finalize_transaction', {

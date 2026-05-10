@@ -4,7 +4,8 @@ import {
   cancelTransaction,
   deleteDraftTransaction,
   updateTransaction,
-  getActiveCategories
+  getActiveCategories,
+  deleteTransactionAdmin
 } from '../services/transaksi.js';
 
 import {
@@ -38,7 +39,7 @@ import {
   showLoadingModal
 } from '../utils/modal.js';
 
-const MAX_NOTES_PER_TRANSACTION = 3;
+const MAX_NOTES_PER_TRANSACTION = 1;
 
 export function renderDetailTransaksiPage({ profile, transactionId }) {
   const page = document.createElement('div');
@@ -162,6 +163,10 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
 
       if (action === 'generate-bend26') {
         await handleGenerateBend26();
+      }
+
+      if (action === 'admin-delete-transaction') {
+        await handleAdminDeleteTransaction();
       }
     });
   }
@@ -362,6 +367,17 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
             </div>
           `)
           .join('')}
+        
+        ${profile?.role === 'admin' ? `
+          <div style="margin-top: 16px; padding: 0 4px;">
+            <button class="btn btn-danger btn-block btn-small" type="button" data-action="admin-delete-transaction" style="opacity: 0.8; font-size: 12px; height: 38px;">
+              Hapus Transaksi Permanen
+            </button>
+            <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px; line-height: 1.4;">
+              Hanya Admin yang dapat menghapus transaksi yang sudah final.
+            </p>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -1225,6 +1241,42 @@ export function renderDetailTransaksiPage({ profile, transactionId }) {
 
     messageBox.className = 'message-box is-hidden';
     messageBox.textContent = '';
+  }
+
+  async function handleAdminDeleteTransaction() {
+    const transaction = state.transaction;
+    if (!transaction) return;
+
+    const confirmed = await showConfirmModal({
+      title: 'Hapus Transaksi Permanen?',
+      message: `Tindakan ini tidak bisa dibatalkan. Transaksi "${transaction.description}" beserta seluruh nota dan dokumen PDF terkait akan dihapus bersih dari sistem.`,
+      confirmText: 'Ya, Hapus Sekarang',
+      cancelText: 'Batal',
+      tone: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    const loading = showLoadingModal({
+      title: 'Menghapus Transaksi...',
+      message: 'Sedang membersihkan data dan file nota dari sistem...',
+      tone: 'danger'
+    });
+
+    try {
+      await deleteTransactionAdmin(transaction.id);
+      
+      await loading.close();
+      
+      setMessage('Transaksi berhasil dihapus secara permanen.', 'success');
+      
+      setTimeout(() => {
+        window.location.hash = 'transaksi';
+      }, 1500);
+    } catch (error) {
+      await loading.close();
+      setMessage('Gagal menghapus transaksi: ' + (error.message || String(error)), 'error');
+    }
   }
 }
 
